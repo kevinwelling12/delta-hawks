@@ -1,0 +1,33 @@
+rules_version = '2';
+// Delta Hawks portals. Invite only: a signed-in Google account must have a members/{email} doc.
+// Roles: admin (everything, manages members), coach (reads everything).
+// 'family' is reserved for a later phase and currently gets no portal data.
+// Portal data is written only by the publish script (Admin SDK, which bypasses these rules).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null && request.auth.token.email_verified == true; }
+    function myEmail() { return request.auth.token.email.lower(); }
+    function myDoc() { return /databases/$(database)/documents/members/$(myEmail()); }
+    function isMember() { return signedIn() && exists(myDoc()); }
+    function role() { return get(myDoc()).data.role; }
+    function isAdmin() { return isMember() && role() == 'admin'; }
+    function seesAll() { return isMember() && role() in ['admin', 'coach']; }
+
+    match /members/{email} {
+      allow get: if signedIn() && (email == myEmail() || isAdmin());
+      allow list: if isAdmin();
+      allow create, update: if isAdmin() && email == email.lower()
+        && request.resource.data.role in ['admin', 'coach']
+        && request.resource.data.keys().hasOnly(['role', 'name', 'added', 'by']);
+      allow delete: if isAdmin() && email != myEmail();
+    }
+    match /portals/{portal} {
+      allow read: if seesAll();
+      allow write: if false;
+      match /chunks/{chunk} {
+        allow read: if seesAll();
+        allow write: if false;
+      }
+    }
+  }
+}

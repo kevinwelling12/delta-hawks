@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Delta Hawks Track</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+ --bg:#FFFFFF;--card:#FFFFFF;--panel:#F4F4F4;--ink:#272727;--muted:#5E5E5E;--faint:#999999;--line:#E4E4E4;
+ --head:#272727;--hawk:#EDF737;--hawk-ink:#272727;--hawk-wash:rgba(237,247,55,.32);--hawk-row:#F9FCBF;--delta:#3A3A3A;
+ --band-edge:#272727;--ctl:#858585;--sel-bg:#272727;--sel-fg:#EDF737;--focus:#272727;--mark:#272727;--good:#1F7A48;
+ --cond:"Barlow Condensed","DIN Condensed","Arial Narrow",sans-serif;--body:"Figtree",Avenir,"Avenir Next","Segoe UI",system-ui,sans-serif;
+ --pad:16px;
+ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1C1C1C;--card:#1C1C1C;--panel:#272727;--ink:#F2F2F2;--muted:#ABABAB;--faint:#707070;--line:#333333;--head:#111111;--delta:#E6E6E6;--good:#5CC98C;--hawk-wash:rgba(237,247,55,.14);--hawk-row:#393B20;--band-edge:transparent;--ctl:#7A7A7A;--sel-bg:#EDF737;--sel-fg:#272727;--focus:#EDF737;--mark:#EDF737;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1C1C1C;--card:#1C1C1C;--panel:#272727;--ink:#F2F2F2;--muted:#ABABAB;--faint:#707070;--line:#333333;--head:#111111;--delta:#E6E6E6;--good:#5CC98C;--hawk-wash:rgba(237,247,55,.14);--hawk-row:#393B20;--band-edge:transparent;--ctl:#7A7A7A;--sel-bg:#EDF737;--sel-fg:#272727;--focus:#EDF737;--mark:#EDF737;color-scheme:dark}
+@media (min-width:720px){:root{--pad:20px}}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 56px)}
+html,body{margin:0;background:var(--bg);color:var(--ink)}
+body{font:400 15px/1.5 var(--body);-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:4px}
+.band :focus-visible,.tabs :focus-visible{outline-color:var(--hawk)}
+a{color:inherit;text-decoration-color:var(--mark);text-decoration-thickness:2px;text-underline-offset:3px}
+td a{text-decoration:none}td a:hover,td a:focus-visible{text-decoration:underline}
+
+/* header: charcoal band and tracked yellow wordmark, as on deltahawksracing.org */
+.band{background:var(--head);color:#fff}
+.top{max-width:1000px;margin:0 auto;padding:22px var(--pad) 12px;display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:6px 24px}
+.top{align-items:center}
+.top h1{margin:0;display:flex;align-items:center;gap:16px;font:700 clamp(20px,4.6vw,28px)/1.08 var(--cond);letter-spacing:.2em;text-transform:uppercase;color:var(--hawk)}
+.top h1 img{height:clamp(66px,14vw,88px);width:auto;display:block}
+.top h1 span{padding-left:16px;border-left:1px solid #555}
+.top .tagline{margin:0;color:#D6D6D6;font:600 clamp(15px,3.4vw,19px)/1.2 var(--cond);letter-spacing:.14em;text-transform:uppercase}
+.foot a{display:inline-block;padding:12px 0}
+.foot{max-width:1000px;margin:0 auto;padding:0 var(--pad) 32px;color:var(--muted);font-size:13px}
+.framed .top h1{display:none}
+.framed .top{padding-top:10px}
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--head)}
+.tabs-in{max-width:1000px;margin:0 auto;display:flex;overflow-x:auto;scrollbar-width:none;padding:0 calc(var(--pad) - 12px)}
+.tabs-in::-webkit-scrollbar{display:none}
+.tabs button{background:none;border:0;border-radius:0;color:#B5B5B5;padding:0 12px;min-height:48px;font:600 17px/1 var(--cond);letter-spacing:.06em;text-transform:uppercase;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+@media (max-width:430px){.tabs-in{padding:0 4px}.tabs button{padding:0 8px;font-size:16px;letter-spacing:.04em}}
+@media (max-width:370px){.tabs button{padding:0 7px}}
+/* six tabs overflow on phones: fade the right edge while more tabs are hidden */
+.tabs-in.more{-webkit-mask-image:linear-gradient(to right,#000 82%,transparent);mask-image:linear-gradient(to right,#000 82%,transparent)}
+.tabs button:hover{color:#fff}
+.tabs button[aria-selected="true"]{color:#fff;border-bottom-color:var(--hawk)}
+.tabs button:focus-visible{outline-offset:-3px}
+
+/* page */
+.wrap{max-width:1000px;margin:0 auto;padding:22px var(--pad) 72px}
+section{display:none}section.on{display:block}
+h2{font:700 clamp(26px,4.4vw,34px)/1.05 var(--cond);letter-spacing:.02em;text-transform:uppercase;margin:0 0 8px;text-wrap:balance}
+h3{font:700 22px/1.15 var(--cond);letter-spacing:.01em;margin:40px 0 10px}
+.sub{color:var(--muted);font-size:14px;margin:0 0 14px;max-width:68ch}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px}
+.chip{min-height:40px;border:1px solid var(--ctl);background:var(--bg);padding:0 16px;border-radius:6px;font:600 16px/1 var(--cond);letter-spacing:.04em;text-transform:uppercase;cursor:pointer;color:var(--muted)}
+.chip:hover{border-color:var(--ink);color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--sel-bg);border-color:var(--sel-bg);color:var(--sel-fg)}
+select{-webkit-appearance:none;appearance:none;min-height:42px;max-width:100%;border:1px solid var(--ctl);border-radius:6px;padding:0 38px 0 12px;font-size:16px;font-weight:600;background:var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23898B90' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center;cursor:pointer}
+select:hover{border-color:var(--ink)}
+
+/* roster: full-bleed rows on phones, ranked where the list is a ranking */
+.roster{list-style:none;margin:0 calc(var(--pad) * -1);padding:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.roster li+li{border-top:1px solid var(--line)}
+.roster li.grp h3{margin:0;padding:22px var(--pad) 8px;font-size:17px}
+.roster li.grp+li{border-top:0}
+.roster button{all:unset;box-sizing:border-box;display:grid;grid-template-columns:1fr auto;column-gap:14px;row-gap:2px;align-items:center;width:100%;min-height:58px;padding:12px var(--pad);cursor:pointer}
+.roster button.ranked{grid-template-columns:1.7em 1fr auto}
+.roster button:hover{background:var(--panel)}
+.roster button:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
+.rk{grid-column:1;grid-row:1/3;font-family:var(--cond);font-weight:700;font-size:18px;color:var(--muted);font-variant-numeric:tabular-nums}
+.rn{grid-column:1;grid-row:1;font-weight:650;font-size:16px}
+.rm{grid-column:1;grid-row:2;color:var(--muted);font-size:13px}
+.ranked .rn,.ranked .rm{grid-column:2}
+.rt{grid-column:-2;grid-row:1/3;text-align:right;font-family:var(--cond);font-weight:700;font-size:36px;line-height:1;font-variant-numeric:tabular-nums}
+.rt small{display:block;font:500 12px/1.3 var(--body);color:var(--muted);margin-top:4px}
+.empty{color:var(--muted);padding:22px var(--pad)}
+.legend i.swatch{background:var(--hawk);box-shadow:inset 0 0 0 1.5px var(--band-edge)}
+.legend i.mk{width:18px;height:12px;background:linear-gradient(#272727,#272727) center/3px 100% no-repeat,var(--hawk)}
+.legend i.mk.dash{background:repeating-linear-gradient(to bottom,#272727 0 2px,transparent 2px 4px) center/2px 100% no-repeat,var(--hawk)}
+.legend i.dash-out{width:2px;height:14px;border-left:2px dashed var(--ink);border-radius:0;vertical-align:-3px}
+
+/* athlete: the expected time is the page */
+.hero{margin:10px 0 0;padding:0 0 4px}
+.big{font-family:var(--cond);font-weight:700;font-size:clamp(76px,17vw,120px);line-height:.86;font-variant-numeric:tabular-nums;letter-spacing:-.015em}
+.cap{color:var(--muted);font-size:14px;margin:10px 0 0;max-width:56ch}
+.strip{position:relative;height:44px;margin:20px 0 6px;max-width:640px}
+.strip .track{position:absolute;left:0;right:0;top:20px;height:4px;background:var(--line);border-radius:2px}
+.strip .band{position:absolute;top:10px;height:24px;box-sizing:border-box;background:var(--hawk);border:1.5px solid var(--band-edge);border-radius:4px}
+/* markers sitting on the yellow band are always charcoal, in light and dark mode */
+.strip .mid{position:absolute;top:10px;width:3px;height:24px;margin-left:-1.5px;background:#272727}
+.strip .pr{position:absolute;top:6px;width:0;height:32px;margin-left:-1px;border-left:2px dashed var(--ink)}
+.strip .pr.in{top:10px;height:24px;border-left-color:#272727}
+.strip .lab{position:absolute;top:40px;font-size:12px;color:var(--muted);transform:translateX(-50%);white-space:nowrap;font-variant-numeric:tabular-nums}
+.legend{display:flex;gap:8px 18px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:16px}
+.legend i{display:inline-block;width:14px;height:10px;margin-right:6px;vertical-align:-1px;border-radius:3px}
+
+/* tables: hairlines only, bleed to the edge on phones so more columns fit */
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 calc(var(--pad) * -1);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+th{font-size:13px;font-weight:700;text-align:left;color:var(--muted);padding:11px 12px;border-bottom:1px solid var(--line);white-space:normal;vertical-align:bottom;line-height:1.25}
+th.n{min-width:4.5em}
+td{padding:11px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{padding-left:var(--pad)}
+th:last-child,td:last-child{padding-right:var(--pad)}
+tr:last-child td{border-bottom:0}
+td.n,th.n{text-align:right}
+tr.hawk td{background:var(--hawk-row);font-weight:600}
+tr.hawk td:first-child{box-shadow:inset 4px 0 0 var(--mark)}
+td.w{white-space:normal;min-width:9em;max-width:16em}
+td .rm{display:block;font-weight:400}
+.sm{display:none}
+/* scroll cue: a soft shadow shows at whichever edge has more columns */
+.scroll{background:linear-gradient(to left,var(--bg) 40%,transparent) right/28px 100% no-repeat local,radial-gradient(farthest-side at 100% 50%,rgba(0,0,0,.22),transparent) right/12px 100% no-repeat scroll;background-color:var(--bg)}
+@media (max-width:719px){
+ .scroll table:not(.nostick) td:first-child,.scroll table:not(.nostick) th:first-child{position:sticky;left:0;z-index:1;background:var(--bg);box-shadow:1px 0 0 var(--line)}
+ .scroll tr.hawk td:first-child{background:var(--hawk-row);box-shadow:inset 4px 0 0 var(--mark),1px 0 0 var(--line)}
+ .scroll tr.venue th{position:static;background:var(--panel)}
+ .lg{display:none}.sm{display:block}
+ td.wide{min-width:12.5em}
+ .nostick tr>*:nth-child(2){padding-left:var(--pad)}
+}
+tr.venue th{font-family:var(--cond);font-weight:800;font-size:16px;color:var(--ink);padding-top:18px;padding-bottom:8px;background:var(--panel)}
+tr.venue th span{font:500 13px var(--body);color:var(--muted);margin-left:10px}
+details.more{margin-top:12px}
+details.more summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:center;gap:8px;color:var(--ink)}
+details.more summary{text-decoration:underline;text-decoration-color:var(--mark);text-decoration-thickness:2px;text-underline-offset:4px}
+
+/* stat figures: a rule above each number instead of boxes */
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:18px 22px;margin:18px 0}
+.kv div{border-top:3px solid var(--hawk);padding-top:10px;display:flex;flex-direction:column;gap:5px}
+.kv b{font-family:var(--cond);font-weight:700;font-size:36px;line-height:1;font-variant-numeric:tabular-nums}
+.kv span{font-size:13px;color:var(--muted)}
+.note{background:var(--panel);border-left:3px solid var(--hawk);border-radius:0 8px 8px 0;padding:12px 16px;font-size:14px;margin:16px 0}
+.prose{max-width:68ch}.prose p,.prose li{margin:0 0 12px}
+sup.fn{font-size:.7em;color:var(--muted);margin-left:1px;font-weight:700}.fnote{margin-top:8px}
+
+/* charts */
+.chart{position:relative;margin:6px 0 0}
+.chart svg{display:block;overflow:visible}
+.chart circle[tabindex]{cursor:pointer;outline:none}
+.chart circle[tabindex]:focus-visible{stroke:var(--focus);stroke-width:3}
+.tip{position:absolute;pointer-events:none;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 11px;font-size:13px;color:var(--muted);box-shadow:0 8px 20px -12px rgba(0,0,0,.4);white-space:nowrap;z-index:2}
+.tip .tv{color:var(--ink);font-weight:750;font-variant-numeric:tabular-nums}
+
+/* alumni */
+.alum{list-style:none;margin:14px 0 0;padding:0}
+.alum>li{padding:18px 0;border-top:1px solid var(--line)}
+.alum>li.grp{border-top:0;padding:30px 0 6px}
+.alum>li:first-child{padding-top:6px}
+.alum h3{margin:0;font-size:19px}
+.alum>li.grp h3{font-size:23px}
+.alum h3 a{text-decoration:none}.alum h3 a:hover{text-decoration:underline}
+.alum .meta{font-size:14px;color:var(--muted);margin:4px 0 0;max-width:68ch}
+.alum .kv{margin:12px 0 0}.alum .kv b{font-size:26px}
+.alum details.more{margin-top:6px}
+
+@media (min-width:720px){.roster,.scroll{margin-left:0;margin-right:0}
+ .roster button,.roster li.grp h3,.empty{padding-left:8px;padding-right:8px}
+ th:first-child,td:first-child{padding-left:8px}th:last-child,td:last-child{padding-right:8px}}
+@media (max-width:420px){.rt{font-size:30px}th,td{padding:10px 9px}}
+/* athlete page lists: one row per item, no sideways scrolling at any width */
+.list{list-style:none;margin:0 calc(var(--pad) * -1);padding:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.list li{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:16px;row-gap:2px;align-items:center;padding:12px var(--pad)}
+.list li+li{border-top:1px solid var(--line)}
+.list li>span,.list li>h4{grid-column:1}
+.list .ln{font-weight:650;font-size:16px}
+.list .lm{color:var(--muted);font-size:13px}
+.list .lt{grid-column:2;grid-row:1/span 3;text-align:right;font-family:var(--cond);font-weight:700;font-size:30px;line-height:1;font-variant-numeric:tabular-nums}
+.list .lt small{display:block;font:500 12px/1.3 var(--body);color:var(--muted);margin-top:4px}
+.list li.grp{background:var(--panel);padding-top:10px;padding-bottom:10px}
+.list li.grp h4{margin:0;font:700 18px/1.2 var(--cond);letter-spacing:.01em}
+details.more .list{margin-top:4px}
+@media (min-width:720px){.list{margin-left:0;margin-right:0}.list li{padding-left:8px;padding-right:8px}}
+@media (max-width:420px){.list .lt{font-size:26px}}
+input.tin{min-height:42px;width:6.5em;border:1px solid var(--ctl);border-radius:6px;padding:0 12px;font-size:16px;font-weight:600;background:var(--bg);font-variant-numeric:tabular-nums}
+input.tin[aria-invalid="true"]{border-color:#B3261E;box-shadow:inset 0 0 0 1px #B3261E}
+.prb{display:inline-block;vertical-align:.3em;margin-right:8px;padding:3px 6px 2px;border-radius:4px;background:var(--sel-bg);color:var(--sel-fg);font:700 14px/1 var(--cond);letter-spacing:.06em;text-decoration:none}
+.prb.old{background:transparent;color:var(--faint);box-shadow:inset 0 0 0 1.5px var(--line)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<body>
+<div class="band"><header class="top">
+<h1><img src="data:image/webp;base64,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" alt="Delta Hawks" width="348" height="221"><span>Track &amp;<br>Field</span></h1><p class="tagline">Athlete Performance Portal</p>
+</header></div>
+<nav class="tabs" aria-label="Portal sections"><div class="tabs-in" role="tablist">
+ <button role="tab" aria-selected="true" data-tab="roster">Predictions</button>
+ <button role="tab" aria-selected="false" data-tab="runner">Athletes</button>
+ <button role="tab" aria-selected="false" data-tab="meets">Meets</button>
+ <button role="tab" aria-selected="false" data-tab="records">Records</button>
+ <button role="tab" aria-selected="false" data-tab="alumni">Alumni</button>
+ <button role="tab" aria-selected="false" data-tab="model">Method</button>
+</div></nav>
+<main class="wrap">
+
+<section id="roster" class="on" role="tabpanel">
+ <h2 id="rosTitle"></h2>
+ <p class="sub">Everyone who raced track for the Hawks this season, with their expected time if they ran this event today and the range 8 in 10 races should land in. Tap a name for details.</p>
+ <div class="bar" id="rosFilters">
+  <select id="rosEvent" aria-label="Event"><option>800 Meters</option><option>1500 Meters</option><option>1600 Meters</option><option>3000 Meters</option><option>3200 Meters</option></select>
+  <button class="chip" data-g="F" aria-pressed="true">Girls</button>
+  <button class="chip" data-g="M" aria-pressed="false">Boys</button>
+ </div>
+ <ul class="roster" id="rosList"></ul>
+ <p class="sub" id="rosNone" style="margin-top:14px"></p>
+ <div id="watch"></div>
+</section>
+
+<section id="records" role="tabpanel">
+ <h2 id="recTitle"></h2>
+ <p class="sub">Best mark per athlete in the club's distance events, 800 m to 2 miles, run for the Delta Hawks at that exact distance. Age groups follow the USATF rule (age on December 31). Tap a name for details.</p>
+ <div class="bar" id="recFilters">
+  <select id="rSeason" aria-label="Season"></select>
+  <button class="chip" data-g="F" aria-pressed="true">Girls</button>
+  <button class="chip" data-g="M" aria-pressed="false">Boys</button>
+  <select id="rEvent" aria-label="Event"></select>
+  <select id="rAge" aria-label="Age group"><option value="">All ages</option><option>8U</option><option>9-10</option><option>11-12</option><option>13-14</option><option>15+</option></select>
+  <button class="chip" id="rActive" aria-pressed="false">2026 roster</button>
+ </div>
+ <div class="scroll"><table id="recTable"></table></div>
+ <div id="recNote"></div>
+</section>
+
+<section id="runner" role="tabpanel">
+ <div class="bar"><label for="runnerSel" class="sub" style="margin:0">Athlete</label><select id="runnerSel"></select></div>
+ <div id="runnerBody"></div>
+</section>
+
+<section id="meets" role="tabpanel">
+ <h2>Meet results</h2>
+ <div class="bar"><select id="meetSel" aria-label="Meet"></select></div>
+ <p class="sub" id="meetNote"></p>
+ <div id="meetBody"></div>
+</section>
+
+<section id="alumni" role="tabpanel">
+ <h2>Alumni</h2>
+ <p class="sub" id="alumSub"></p>
+ <div class="bar" id="alumFilters">
+  <button class="chip" data-ag="" aria-pressed="true">All</button>
+  <button class="chip" data-ag="F" aria-pressed="false">Girls</button>
+  <button class="chip" data-ag="M" aria-pressed="false">Boys</button>
+ </div>
+ <ul class="alum" id="alumList"></ul>
+ <div id="alumNote"></div>
+</section>
+
+<section id="model" role="tabpanel"><div class="prose" id="modelBody"></div></section>
+</main>
+<footer class="foot"><p id="updated" style="margin:0 0 6px"></p><p style="margin:0">Cross country results live in a separate portal: <a href="https://claude.ai/artifact/9ec7RgWJduQruEPNtHDL6S" target="_blank" rel="noopener">open the Cross Country portal</a>.</p></footer>
+
+<script id="data" type="application/json">__DATA__</script>
+<script>
+// hide the logo only when the club site embeds the page with ?embed=1 (the claude.ai viewer also uses a frame)
+try{if(new URLSearchParams(location.search).has('embed'))document.documentElement.classList.add('framed')}catch(e){}
+const D=JSON.parse(document.getElementById('data').textContent);
+const nth=n=>n+(n%100>=11&&n%100<=13?'th':({1:'st',2:'nd',3:'rd'}[n%10]||'th'));
+// latest grade (or age) listed at cross country meets, copied from the cross country portal's data; projected forward each August
+const GRADES={"adeleine glenn":{"g":8,"d":"2023-11-26"},"anastasia villavicencio":{"g":8,"d":"2022-10-22"},"audrey zaragoza":{"g":7,"d":"2023-09-09"},"benjamin schafer":{"g":5,"d":"2026-09-19"},"branden blanco":{"a":14,"d":"2022-11-06"},"callan lindsay":{"g":6,"d":"2025-10-03"},"cameron smith":{"g":8,"d":"2019-11-24"},"carlos ramirez ii":{"g":8,"d":"2023-10-21"},"charles albrecht":{"g":12,"d":"2021-10-23"},"cypress connelly":{"g":5,"d":"2026-09-11"},"dalton welling":{"g":3,"d":"2026-09-19"},"david rodriguez":{"g":7,"d":"2026-09-19"},"dylan bonilla":{"g":7,"d":"2019-11-24"},"elias thronson":{"g":8,"d":"2023-12-09"},"hadley farris":{"g":6,"d":"2026-09-11"},"hanah bianchini":{"g":6,"d":"2024-11-03"},"harper farris":{"g":8,"d":"2025-10-03"},"hugo huising":{"g":5,"d":"2026-09-19"},"isaac delwiche":{"g":8,"d":"2025-10-25"},"jack mittleman":{"g":7,"d":"2026-09-11"},"jai hooks":{"g":3,"d":"2024-10-26"},"jake mason":{"g":8,"d":"2019-11-24"},"jayce kubish":{"g":5,"d":"2025-10-03"},"john barreiro":{"a":14,"d":"2021-12-11"},"josie thronson":{"g":7,"d":"2026-09-19"},"kailey donovan":{"g":4,"d":"2026-09-19"},"katie cook":{"g":3,"d":"2024-12-14"},"kayla tausig":{"g":12,"d":"2022-10-22"},"kelsea weeks":{"g":3,"d":"2026-09-19"},"lou knowles":{"g":8,"d":"2023-11-12"},"mackenna miller":{"g":8,"d":"2023-10-21"},"maddison orr":{"g":6,"d":"2025-10-25"},"mason miller":{"g":8,"d":"2024-10-26"},"matthew ogilvie":{"g":8,"d":"2022-11-06"},"myles whitney":{"a":12,"d":"2019-12-14"},"natalie mittleman":{"g":8,"d":"2024-09-20"},"nathaniel carter ii":{"a":12,"d":"2021-12-11"},"nathaniel inadomi":{"g":5,"d":"2025-10-03"},"oliver charkiewicz":{"g":8,"d":"2022-10-14"},"owen perkins":{"a":12,"d":"2021-12-11"},"paloma peter":{"a":14,"d":"2022-11-20"},"presley strickland":{"a":12,"d":"2022-11-20"},"reagan wagner":{"a":14,"d":"2022-11-20"},"rosalind huising":{"g":3,"d":"2026-09-19"},"ryko higuera":{"g":11,"d":"2019-10-19"},"samuel taylor":{"a":12,"d":"2019-12-01"},"sonia brown":{"g":8,"d":"2025-10-25"},"sophie miles":{"g":3,"d":"2022-09-30"},"stella molin":{"g":6,"d":"2023-10-21"},"sullivan harding":{"a":12,"d":"2019-12-14"},"tyler cook":{"g":7,"d":"2026-09-11"},"william welch":{"g":7,"d":"2026-09-19"},"william gavia":{"g":4,"d":"2026-09-11"}};
+function gradeOf(name){const x=GRADES[String(name).toLowerCase()],out={};if(!x)return out;
+ const sy=d=>+d.slice(0,4)-(+d.slice(5,7)<8?1:0),SY=sy(D.meta.as_of);
+ if(x.g!=null){const c=x.g+(SY-sy(x.d));if(c>12){out.grade=`graduated high school in ${sy(x.d)+(12-x.g)+1}`;out.short='graduated'}else{out.grade=`${nth(c)} grade in ${SY}-${String(SY+1).slice(2)}`;out.short=`${nth(c)} grade`}}
+ else if(x.a!=null)out.grade='about '+(x.a+Math.round((new Date(D.meta.as_of)-new Date(x.d))/(365.25*864e5)));
+ return out}
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt=s=>{if(s==null)return'';if(s<59.995)return s.toFixed(2);const t=Math.round(s*10)/10,m=Math.floor(t/60),r=t-m*60;return m+':'+(r<10?'0':'')+r.toFixed(1)};  // round first so 9.96 s shows as 10.0, not 010.0
+const fdate=d=>new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+const MK=D.marks,AT=D.athletes,byAth=Object.fromEntries(AT.map(a=>[a.ath,a]));
+const markTxt=x=>x.high?(()=>{const i=Math.floor(x.v/12),r=x.v-i*12;return i+"' "+(+r.toFixed(2))+'"'})():x.mark+(x.fat?'':' (hand timed)');
+const isHand=x=>!x.high&&!x.fat;
+const markHtml=x=>isHand(x)?esc(x.mark)+'<sup class="fn" title="Hand timed">h</sup>':esc(markTxt(x));
+const handNote=xs=>xs.some(isHand)?'<p class="sub fnote"><sup class="fn">h</sup> Hand timed with a stopwatch, not fully automatic timing.</p>':'';
+const better=(a,b)=>a.high?a.v>b.v:a.v<b.v;
+const bestOf=xs=>xs.reduce((b,x)=>!b||better(x,b)?x:b,null);
+const ORDER=['100 Meters','200 Meters','400 Meters','800 Meters','1500 Meters','1600 Meters','1 Mile','3000 Meters','3200 Meters'];
+const evSort=(a,b)=>{const i=ORDER.indexOf(a),j=ORDER.indexOf(b);return (i<0?99:i)-(j<0?99:j)||a.localeCompare(b)};
+$('#updated').textContent='Data updated '+fdate(D.meta.as_of)+'.';
+function show(tab){document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===tab));
+ const sel=document.querySelector(`nav button[data-tab="${tab}"]`);if(sel)sel.scrollIntoView({block:'nearest',inline:'nearest'});
+ document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id===tab));
+ try{localStorage.setItem('dht_tab',tab)}catch(e){} if(tab==='runner')drawProg()}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>show(b.dataset.tab));
+{const t=document.querySelector('.tabs-in'),f=()=>t.classList.toggle('more',t.scrollLeft+t.clientWidth<t.scrollWidth-4);t.addEventListener('scroll',f,{passive:true});addEventListener('resize',f);f()}
+
+// roster: expected times by event, like the cross country roster
+let RG='F';const rSeason=true; // predictions cover this season's track team only; past athletes stay on the Athletes tab
+const seasonYr=String(new Date(D.meta.as_of+'T12:00:00').getMonth()>=2?new Date(D.meta.as_of+'T12:00:00').getFullYear():new Date(D.meta.as_of+'T12:00:00').getFullYear()-1);
+function renderRoster(){const ev=$('#rosEvent').value;
+ const pool=AT.filter(a=>a.g===RG&&(!rSeason||a.this_season));
+ const rows=pool.map(a=>({a,e:a.expected.find(x=>x.event===ev)})).filter(x=>x.e).sort((x,y)=>x.e.pred-y.e.pred);
+ $('#rosTitle').textContent=`Expected ${ev.replace(' Meters',' m')} times`;
+ $('#rosList').innerHTML=rows.length?rows.map(({a,e},i)=>{const pr=bestOf(MK.filter(x=>x.ath===a.ath&&x.event===ev));
+  return `<li><button class="ranked" data-ath="${esc(a.ath)}"><span class="rk">${i+1}</span><span class="rn">${esc(a.name)}</span><span class="rm">${pr?'PR '+esc(markTxt(pr))+', ':'No '+esc(ev)+' yet, from other events. '}last race ${esc(a.last_meet)} ${a.last.slice(0,4)}${(g=>g?', '+g:'')(gradeOf(a.name).short)}</span>
+  <span class="rt">${fmt(e.pred)}<small>${fmt(e.lo)} to ${fmt(e.hi)}</small></span></button></li>`}).join('')
+  :'<li class="empty">No '+seasonYr+' track athletes have an expected time in this event yet. Past athletes are on the Athletes tab.</li>';
+ const none=pool.filter(a=>!a.expected.length).map(a=>a.name);
+ $('#rosNone').textContent=none.length?`Raced this season but no expected time (sprint or field events only, or no distance race in the past 13 months): ${none.join(', ')}.`:'';
+ document.querySelectorAll('#rosList button').forEach(b=>b.onclick=()=>openRunner(b.dataset.ath));
+ renderWatch()}
+function renderWatch(){const w=AT.filter(a=>a.this_season&&a.surprise&&Math.abs(a.surprise.z)>=1).sort((a,b)=>b.surprise.z-a.surprise.z);
+ if(!w.length){$('#watch').innerHTML='';return}
+ $('#watch').innerHTML=`<h3>Latest race vs expectations</h3><p class="sub">Athletes whose most recent distance race was well outside what their earlier races predicted. Worth a check-in either way.</p><ul class="roster">${w.map(a=>{const s=a.surprise;
+  return `<li><button data-ath="${esc(a.ath)}"><span class="rn">${esc(a.name)}</span><span class="rm">${esc(s.event)} at ${esc(s.meet)}, ${fdate(s.date)}: ${esc(s.mark)} vs ${fmt(s.expected)} expected</span>
+  <span class="rt" style="font-size:24px">${s.pct>0?'+':''}${s.pct}%<small>${s.pct>0?'faster':'slower'} than expected</small></span></button></li>`}).join('')}</ul>`;
+ document.querySelectorAll('#watch button').forEach(b=>b.onclick=()=>openRunner(b.dataset.ath))}
+document.querySelectorAll('#rosFilters [data-g]').forEach(b=>b.onclick=()=>{RG=b.dataset.g;document.querySelectorAll('#rosFilters [data-g]').forEach(x=>x.setAttribute('aria-pressed',x===b));renderRoster()});
+$('#rosEvent').onchange=renderRoster;
+
+// records
+let G='F',act=false;
+const seasons=[...new Set(MK.map(x=>x.date.slice(0,4)))].sort().reverse();
+$('#rSeason').innerHTML='<option value="">All-time</option>'+seasons.map(y=>`<option value="${y}">${y} season</option>`).join('');
+// records cover the club's distance events only (800 m to 2 miles), each at its actual distance: no sprints, field events or converted marks
+const REC_EV=['800 Meters','1500 Meters','1600 Meters','1 Mile','Mile','3000 Meters','3200 Meters','2 Mile'];
+function evOpts(){const cur=$('#rEvent').value,ev=[...new Set(MK.filter(x=>x.g===G&&REC_EV.includes(x.event)).map(x=>x.event))].sort(evSort);
+  $('#rEvent').innerHTML=ev.map(e=>`<option${e===cur?' selected':''}>${esc(e)}</option>`).join('');if(!ev.includes(cur))$('#rEvent').value=ev.includes('800 Meters')?'800 Meters':ev[0]}
+function renderRecords(){const y=$('#rSeason').value,ev=$('#rEvent').value,ag=$('#rAge').value;
+ const grpd=false;
+ const rows=MK.filter(x=>x.event===ev).filter(x=>x.g===G&&(!y||x.date.startsWith(y))&&(!ag||x.ag===ag)&&(!act||byAth[x.ath]?.active));
+ const best=new Map();rows.forEach(x=>{const b=best.get(x.ath);if(!b||better(x,b))best.set(x.ath,x)});
+ const list=[...best.values()].sort((a,b)=>a.high?b.v-a.v:a.v-b.v);
+ $('#recTitle').textContent=`${G==='F'?'Girls':'Boys'} ${evLabel(ev)}, ${y?y+' season':'all-time'}${ag?', '+ag:''}`;
+ $('#recTable').innerHTML=list.length?`<tr><th class="n">#</th><th>Athlete</th><th class="n">${grpd?GROUPS[ev].as.replace(' Meters',' m')+' equiv.':'Mark'}</th>${grpd?'<th>Actual</th>':''}<th class="lg">Age group</th><th class="lg">Meet</th><th class="lg">Date</th></tr>`+
+  list.map((x,i)=>`<tr><td class="n">${i+1}</td><td class="w"><a href="#" data-ath="${esc(x.ath)}">${esc(x.name)}</a><span class="rm sm">${esc(x.meet)}, ${fdate(x.date)}${x.ag?', '+esc(x.ag):''}</span></td><td class="n">${grpd?cellHtml(x):markHtml(x)}</td>${grpd?`<td>${esc(x.event.replace(' Meters',' m'))} ${markHtml(x.orig)}</td>`:''}<td class="lg">${esc(x.ag)}</td><td class="lg" style="white-space:normal">${esc(x.meet)}</td><td class="lg">${fdate(x.date)}</td></tr>`).join('')
+  :'<tr><td class="empty">No marks match.</td></tr>';
+ $('#recNote').innerHTML=handNote(list);
+ document.querySelectorAll('#recTable a[data-ath]').forEach(a=>a.onclick=e=>{e.preventDefault();openRunner(a.dataset.ath)})}
+document.querySelectorAll('#recFilters [data-g]').forEach(b=>b.onclick=()=>{G=b.dataset.g;document.querySelectorAll('#recFilters [data-g]').forEach(x=>x.setAttribute('aria-pressed',x===b));evOpts();renderRecords()});
+['#rSeason','#rEvent','#rAge'].forEach(s=>$(s).onchange=renderRecords);
+$('#rActive').onclick=e=>{act=!act;e.currentTarget.setAttribute('aria-pressed',act);renderRecords()};
+
+// runner
+const sortedAth=[...AT].sort((a,b)=>(b.this_season-a.this_season)||b.last.localeCompare(a.last)||a.name.localeCompare(b.name));
+const grp=a=>a.this_season?'Raced this season':'Last competed '+a.last.slice(0,4);
+$('#runnerSel').innerHTML='<option value="" disabled selected>Select an athlete</option>'+[...new Set(sortedAth.map(grp))].map(g=>`<optgroup label="${g}">`+sortedAth.filter(a=>grp(a)===g).sort((a,b)=>a.name.localeCompare(b.name)).map(a=>`<option value="${esc(a.ath)}">${esc(a.name)}</option>`).join('')+'</optgroup>').join('');
+$('#runnerSel').onchange=e=>renderRunner(e.target.value);
+let progAth=null,progEv=null,GRP=true;try{GRP=localStorage.getItem('dht_grp')!=='0'}catch(e){}
+// grouped distances: 1500/1600/mile shown as 1600 equivalents, 3000/3200/2 mile as 3200, using the model's distance scaling
+const DM={'1500 Meters':1500,'1600 Meters':1600,'1 Mile':1609.344,'Mile':1609.344,'3000 Meters':3000,'3200 Meters':3200,'2 Mile':3218.688};
+const GROUPS={'Mile group':{as:'1600 Meters',ev:['1500 Meters','1600 Meters','1 Mile','Mile']},'2 Mile group':{as:'3200 Meters',ev:['3000 Meters','3200 Meters','2 Mile']}};
+const groupOf=e=>Object.keys(GROUPS).find(k=>GROUPS[k].ev.includes(e));
+const eqv=(x,to)=>x.event===to?x.v:x.v*Math.pow(DM[to]/DM[x.event],D.meta.riegel)*Math.exp((D.meta.events[to]||0)-(D.meta.events[x.event]||0));
+// marks for a display event: a real event, or a group with each mark converted (y) and flagged
+const evMarks=(rs,e)=>GROUPS[e]?rs.filter(x=>GROUPS[e].ev.includes(x.event)).map(x=>({...x,v:eqv(x,GROUPS[e].as),conv:x.event!==GROUPS[e].as,orig:x})):rs.filter(x=>x.event===e);
+const dispEvs=evs=>{if(!GRP)return evs;const out=[];evs.forEach(e=>{const g=groupOf(e);const k=g&&evs.filter(v=>GROUPS[g].ev.includes(v)).length>1?g:e;if(!out.includes(k))out.push(k)});return out};
+const evLabel=e=>GROUPS[e]?`${e} (as ${GROUPS[e].as.replace(' Meters','m')})`:e;
+const cellHtml=b=>b.conv?fmt(b.v)+'<sup class="fn" title="Converted from '+esc(b.orig.event)+' '+esc(b.orig.mark)+'">≈</sup>':markHtml(b);
+function openRunner(ath){$('#runnerSel').value=ath;renderRunner(ath);show('runner');window.scrollTo(0,0)}
+function renderRunner(ath){const a=byAth[ath];if(!a)return;const ga=gradeOf(a.name),al0=AL.find(x=>x.ath===ath)||AL.find(x=>x.name.toLowerCase()===a.name.toLowerCase());
+  const distEv=x=>x.event==='800 Meters'||DM[x.event]!=null,lastDist=MK.filter(x=>x.ath===ath).concat(al0?al0.results:[]).filter(distEv).sort((x,y)=>y.date.localeCompare(x.date))[0];const rs=MK.filter(x=>x.ath===ath).sort((x,y)=>x.date.localeCompare(y.date));
+ const evs=[...new Set(rs.map(x=>x.event))].sort(evSort),yrs=[...new Set(rs.map(x=>x.date.slice(0,4)))].sort();
+ const prs=evs.map(e=>bestOf(rs.filter(x=>x.event===e)));progAth=ath;const dev=dispEvs(evs),hasGrp=dev.some(e=>GROUPS[e])||evs.filter(e=>groupOf(e)).length>1&&!GRP;
+ if(!dev.includes(progEv))progEv=GRP&&GROUPS[groupOf(progEv)]&&dev.includes(groupOf(progEv))?groupOf(progEv):!GRP&&GROUPS[progEv]?GROUPS[progEv].as:null;
+ if(!dev.includes(progEv))progEv=dev.includes('800 Meters')?'800 Meters':dev[0];
+ $('#runnerBody').innerHTML=`<h2>${esc(a.name)}</h2><p class="sub">${a.g==='F'?'Girls':'Boys'}${ga.grade?', '+ga.grade:''}. ${rs.length} marks with the Delta Hawks, ${yrs[0]}${yrs.length>1?' to '+yrs[yrs.length-1]:''}.${ga.grade?' Grade projected from cross country meet listings.':''}</p>
+ ${a.expected.length?`<h3>Expected today</h3>${al0&&al0.last>a.last?`<p class="sub">Includes ${al0.n} results since the Hawks for ${esc(al0.team)}, through ${fdate(al0.last)}.</p>`:''}<div class="kv">${a.expected.map(x=>`<div><b>${fmt(x.pred)}</b><span>${esc(x.event)}. 8 in 10 races between ${fmt(x.lo)} and ${fmt(x.hi)}</span></div>`).join('')}</div>`:`<p class="note">No expected times: no distance race (800 m to 2 miles) in the past 13 months.${lastDist?` The last one was the ${esc(lastDist.event.replace(' Meters',' m'))} on ${fdate(lastDist.date)}.`:''}</p>`}
+ <h3>Personal records</h3><div class="kv">${prs.map(p=>`<div><b>${markHtml(p)}</b><span>${esc(p.event)}, ${fdate(p.date)}</span></div>`).join('')}</div>
+ <h3>Progression</h3><div class="bar"><select id="progEv" aria-label="Event">${dev.map(e=>`<option value="${esc(e)}"${e===progEv?' selected':''}>${esc(evLabel(e))}</option>`).join('')}</select>${hasGrp?`<button class="chip" id="grpBtn" aria-pressed="${GRP}">Group similar distances</button>`:''}</div>
+ <p class="sub" style="margin:0 0 6px" id="progCap"></p><div class="chart" id="prog"></div>
+ <h3>Season bests</h3><div class="scroll"><table><tr><th>Event</th>${yrs.map(y=>`<th class="n">${y}</th>`).join('')}</tr>${dev.map(e=>`<tr><td>${esc(evLabel(e))}</td>${yrs.map(y=>{const b=bestOf(evMarks(rs,e).filter(x=>x.date.startsWith(y)));return `<td class="n">${b?cellHtml(b):''}</td>`}).join('')}</tr>`).join('')}</table></div>${dev.some(e=>GROUPS[e]&&yrs.some(y=>bestOf(evMarks(rs,e).filter(x=>x.date.startsWith(y)))?.conv))?'<p class="sub fnote"><sup class="fn">≈</sup> Converted from a 1500 m, mile, 3000 m or 2 mile mark with the model\'s distance scaling. Hover for the actual mark.</p>':''}
+ <h3>All results</h3>${resList(rs)}<p class="sub fnote"><abbr class="prb">PR</abbr>Personal record in that event. <abbr class="prb old">PR</abbr>A personal record when it was run, since beaten.</p>${handNote(rs)}
+ ${(al=>al?`<h3>Since the Hawks</h3><p class="sub">Now ${esc(al.team)}. ${al.n} races for schools and other clubs after their last Hawks race on ${fdate(al.hawk_last)}, from their athletic.net profile. Used in expected times, but not in records.</p>${alumTiles(al)}${alumTable(al)}`:'')(AL.find(x=>x.ath===ath)||AL.find(x=>x.name.toLowerCase()===a.name.toLowerCase()))}`;
+ $('#progEv').onchange=e=>{progEv=e.target.value;drawProg()};
+ if($('#grpBtn'))$('#grpBtn').onclick=()=>{GRP=!GRP;try{localStorage.setItem('dht_grp',GRP?'1':'0')}catch(e){}renderRunner(ath)};drawProg()}
+// results as one row per mark, newest first; older ones folded away
+function resList(rs){const prs=new Set([...new Set(rs.map(x=>x.event))].map(e=>bestOf(rs.filter(x=>x.event===e))));
+ // former PRs: the best in that event when run, since beaten
+ const run={},olds=new Set();rs.slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(x=>{const b=run[x.event];if(!b||better(x,b)){run[x.event]=x;if(!prs.has(x))olds.add(x)}});
+ const row=x=>`<li><span class="ln">${esc(x.meet)}</span><span class="lm">${fdate(x.date)}, ${esc(x.event)}${x.div?', '+esc(x.div):''}</span><span class="lt">${prs.has(x)?'<abbr class="prb" title="Personal record in this event">PR</abbr>':olds.has(x)?'<abbr class="prb old" title="Personal record when it was run, since beaten">PR</abbr>':''}${markHtml(x)}<small>${x.place?'Place '+esc(x.place):''}</small></span></li>`;
+ const all=rs.slice().reverse(),N=10;
+ return `<ul class="list">${all.slice(0,N).map(row).join('')}</ul>`+(all.length>N?`<details class="more"><summary>${all.length-N} earlier result${all.length-N>1?'s':''}</summary><ul class="list">${all.slice(N).map(row).join('')}</ul></details>`:'')}
+// progression: one panel per track season (Feb to Jul), dots, a best-fit line per season with 3+ marks
+function drawProg(){const el=document.getElementById('prog');if(!el||!progAth)return;
+ const rs=evMarks(MK.filter(x=>x.ath===progAth),progEv).map(x=>({t:new Date(x.date+'T12:00:00'),y:x.v,x:x.orig||x,conv:!!x.conv})).sort((a,b)=>a.t-b.t);const grpd=!!GROUPS[progEv];
+ const al=AL.find(x=>x.ath===progAth)||AL.find(x=>x.name.toLowerCase()===(byAth[progAth]||{}).name?.toLowerCase());
+ const post=al?evMarks(al.results,progEv).map(x=>({t:new Date(x.date+'T12:00:00'),y:x.v,x:x.orig||x,conv:!!x.conv,post:true})).sort((a,b)=>a.t-b.t):[];
+ if(!rs.length){el.innerHTML='';return}const high=rs[0].x.high;
+ $('#progCap').textContent=(high?'Each mark in this event. Farther is higher.'+(post.length?' Hollow squares are after the Hawks.':''):grpd?`Each race in the group, shown as a ${GROUPS[progEv].as.replace(' Meters',' m')} equivalent. Hollow dots are converted from another distance. Faster is higher.${post.length?' Hollow squares are after the Hawks.':''}`:'Each race in this event. Faster is higher.'+(post.length?' Hollow squares are after the Hawks.':''));
+ const years=[...new Set(rs.concat(post).map(p=>p.t.getFullYear()))].sort((a,b)=>a-b);const W=Math.max(300,el.clientWidth),H=W<480?220:250,L=52,R=10,T=14,B=44,gap=12,n=years.length,pw=(W-L-R-gap*(n-1))/n;
+ const win=y=>{const ts=rs.concat(post).filter(p=>p.t.getFullYear()===y).map(p=>+p.t);return [Math.min(+new Date(y,1,15),...ts)-3*864e5,Math.max(+new Date(y,6,31),...ts)+3*864e5]};const W8=Object.fromEntries(years.map(y=>[y,win(y)]));
+ const X=t=>{const y=t.getFullYear(),i=years.indexOf(y),[a,b]=W8[y];return L+i*(pw+gap)+(t-a)/(b-a)*pw};
+ let y0=Math.min(...rs.concat(post).map(p=>p.y)),y1=Math.max(...rs.concat(post).map(p=>p.y));const pad=(y1-y0)*.08||(high?6:3);y0-=pad;y1+=pad;
+ const Y=v=>high?T+(y1-v)/(y1-y0)*(H-T-B):T+(v-y0)/(y1-y0)*(H-T-B);
+ const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');svg.setAttribute('width',W);svg.setAttribute('height',H);svg.setAttribute('role','img');
+ svg.setAttribute('aria-label',`${evLabel(progEv)} progression, ${rs.length} marks. Full list in the results table.`);
+ const add=(tag,at,txt)=>{const e=document.createElementNS(ns,tag);for(const k in at)e.setAttribute(k,at[k]);if(txt!=null)e.textContent=txt;svg.appendChild(e);return e};
+ const lab=v=>high?(()=>{const i=Math.floor(v/12);return i+"'"+Math.round(v-i*12)+'"'})():fmt(v).replace(/\.\d$/,'');
+ const step=[1,2,5,10,15,30,60].find(s=>(y1-y0)/s<=5)||120;
+ for(let v=Math.ceil(y0/step)*step;v<=y1;v+=step){add('line',{x1:L,x2:W-R,y1:Y(v),y2:Y(v),stroke:'var(--line)'});add('text',{x:L-6,y:Y(v)+4,'text-anchor':'end','font-size':12,fill:'var(--muted)'},lab(v))}
+ years.forEach((y,i)=>{const x0=L+i*(pw+gap);add('line',{x1:x0,x2:x0+pw,y1:H-B,y2:H-B,stroke:'var(--muted)'});
+  [2,3,4,5,6].forEach(m=>{const t=new Date(y,m,1);if(t<W8[y][0]||t>W8[y][1])return;add('text',{x:X(t),y:H-B+16,'text-anchor':'middle','font-size':11,fill:'var(--muted)'},t.toLocaleDateString('en-US',{month:pw<150?'narrow':'short'}))});
+  add('text',{x:x0+pw/2,y:H-6,'text-anchor':'middle','font-size':13,'font-weight':600,fill:'var(--ink)'},String(y));
+  const s=rs.filter(p=>p.t.getFullYear()===y);if(s.length>=3){const xs=s.map(p=>(p.t-s[0].t)/864e5),ys=s.map(p=>p.y),mx=xs.reduce((a,b)=>a+b)/xs.length,my=ys.reduce((a,b)=>a+b)/ys.length,sxx=xs.reduce((a,x)=>a+(x-mx)**2,0);
+   if(sxx>0){const b=xs.reduce((a,x,i)=>a+(x-mx)*(ys[i]-my),0)/sxx;add('line',{x1:X(s[0].t),y1:Y(my+b*(0-mx)),x2:X(s[s.length-1].t),y2:Y(my+b*(xs[xs.length-1]-mx)),stroke:'var(--delta)','stroke-width':2,'stroke-linecap':'round',opacity:.85})}}});
+ if(post.length){const x1=X(rs[rs.length-1].t),x2=X(post[0].t),xd=x2-x1>24?x1+12:(x1+x2)/2;
+  add('line',{x1:xd,x2:xd,y1:T,y2:H-B,stroke:'var(--muted)','stroke-width':1.5,'stroke-dasharray':'4 4'});
+  add('text',{x:xd+5,y:T+10,'font-size':11,'font-weight':600,fill:'var(--muted)',stroke:'var(--card)','stroke-width':4,'paint-order':'stroke'},'After the Hawks');
+  post.forEach(p=>add('rect',{x:X(p.t)-4.5,y:Y(p.y)-4.5,width:9,height:9,rx:2,fill:'var(--card)',stroke:'var(--delta)','stroke-width':2}))}
+ rs.forEach(p=>p.conv?add('circle',{cx:X(p.t),cy:Y(p.y),r:4.5,fill:'var(--card)',stroke:'var(--delta)','stroke-width':2}):add('circle',{cx:X(p.t),cy:Y(p.y),r:5,fill:'var(--delta)',stroke:'var(--card)','stroke-width':2}));
+ const tip=document.createElement('div');tip.className='tip';tip.hidden=true;
+ rs.concat(post).forEach(p=>{const c=add('circle',{cx:X(p.t),cy:Y(p.y),r:12,fill:'transparent',tabindex:0,'aria-label':`${p.x.meet}, ${fdate(p.x.date)}: ${grpd?p.x.event+' ':''}${markTxt(p.x)}${p.conv?', about '+fmt(p.y)+' for '+GROUPS[progEv].as:''}`});
+  const on=()=>{tip.replaceChildren(...[(grpd?p.x.event.replace(' Meters',' m')+' ':'')+markTxt(p.x),...(p.conv?['About '+fmt(p.y)+' for '+GROUPS[progEv].as.replace(' Meters',' m')]:[]),...(p.post?['For '+p.x.team+', after the Hawks']:[]),p.x.meet,fdate(p.x.date)+(p.x.place?', place '+p.x.place:'')].map((l,i)=>{const d=document.createElement('div');d.textContent=l;if(!i)d.className='tv';return d}));tip.hidden=false;
+   const w=tip.offsetWidth;tip.style.left=Math.min(Math.max(0,X(p.t)-w/2),W-w)+'px';tip.style.top=(Y(p.y)-tip.offsetHeight-12<0?Y(p.y)+14:Y(p.y)-tip.offsetHeight-12)+'px'};
+  c.addEventListener('pointerenter',on);c.addEventListener('focus',on);c.addEventListener('pointerleave',()=>tip.hidden=true);c.addEventListener('blur',()=>tip.hidden=true)});
+ el.replaceChildren(svg,tip)}
+let pw0=0;window.addEventListener('resize',()=>{const el=document.getElementById('prog');if(el&&el.clientWidth!==pw0){pw0=el.clientWidth;drawProg()}});
+
+// meets
+const meets=[...new Map(MK.map(x=>[x.date+'|'+x.meet,x])).values()].sort((a,b)=>b.date.localeCompare(a.date));
+$('#meetSel').innerHTML=meets.map(m=>`<option value="${esc(m.date+'|'+m.meet)}">${m.date} ${esc(m.meet)}</option>`).join('');
+function renderMeet(){const k=$('#meetSel').value,rows=MK.filter(x=>x.date+'|'+x.meet===k);
+ const evs=[...new Set(rows.map(x=>x.event))].sort(evSort);$('#meetNote').textContent=`${fdate(rows[0].date)}. ${rows.length} Hawks marks. Only Hawks results are stored.`;
+ $('#meetBody').innerHTML=evs.map(e=>{const rr=rows.filter(x=>x.event===e).sort((a,b)=>a.g.localeCompare(b.g)||(a.high?b.v-a.v:a.v-b.v));
+  return `<h3>${esc(e)}</h3><div class="scroll"><table><tr><th>Athlete</th><th>Division</th><th class="n">Mark</th><th class="n">Place</th></tr>${rr.map(x=>`<tr><td><a href="#" data-ath="${esc(x.ath)}">${esc(x.name)}</a></td><td>${esc(x.div)}</td><td class="n">${markHtml(x)}</td><td class="n">${esc(x.place||'')}</td></tr>`).join('')}</table></div>`}).join('')+handNote(rows);
+ document.querySelectorAll('#meetBody a[data-ath]').forEach(a=>a.onclick=e=>{e.preventDefault();openRunner(a.dataset.ath)})}
+$('#meetSel').onchange=renderMeet;
+
+// model
+const M=D.meta,bt=M.backtest||{},pct=v=>(v*100).toFixed(1)+'%',n0=v=>Number(v).toLocaleString('en-US');
+const evAdj=Object.entries(M.events||{}).filter(([e])=>e!=='1600 Meters').sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));
+const adjTxt=([e,v])=>`the ${e.replace(' Meters',' m')} runs about ${(Math.abs(Math.expm1(v))*100).toFixed(1)}% ${v>0?'slower':'faster'}`;
+const be=Object.entries(bt.by_event||{}).sort((a,b)=>a[1]-b[1]);
+$('#modelBody').innerHTML=`<h2>How the expected times work</h2>
+<p class="sub">Built from ${n0(M.n_marks)} Hawks marks by ${M.n_athletes} athletes. Expected times cover distance events, 800 m to 2 miles. Accuracy below is measured strictly: each race is predicted using only earlier races.</p>
+<div class="kv"><div><b>${bt.mape??'n/a'}%</b><span>Typical miss predicting a race from earlier races only (${bt.mae_s??''} s)</span></div>
+<div><b>${bt.naive_mape??'n/a'}%</b><span>Typical miss repeating the athlete's last time in that event</span></div>
+<div><b>${bt.cover_by_scale?Math.round(100*bt.cover_by_scale['1.0']):'n/a'}%</b><span>Races inside the 80% range</span></div>
+<div><b>${pct(M.growth)}</b><span>Typical yearly improvement on the track, from ${M.n_growth} athletes seen in more than one season</span></div></div>
+<h3>Steps</h3>
+<p>Every mark is scaled to 1600 m. Race time grows with distance to the power ${M.riegel}, measured from athletes who ran more than one event. The adult rule of thumb is 1.06.${evAdj.length?` Each event also gets a small adjustment beyond that formula: ${adjTxt(evAdj[0])}${evAdj[1]?` and ${adjTxt(evAdj[1])}`:''} than distance scaling alone expects.`:''}</p>
+<p>An athlete's expected time weights recent races more (a race loses half its weight every 120 days, counted from the latest race) and pulls lightly toward the group average. Growth since the last race is added, and the likely range widens the longer an athlete goes without racing.</p>
+<p>The model uses every distance mark on the athletes' athletic.net profiles, including school and club track and races after leaving the Hawks. Records and meet results list only marks run for the Delta Hawks. Results since leaving the club appear on the Alumni tab and athlete pages. Track is kept separate from cross country.</p>
+<h3>Backtest</h3>
+<p>The model replayed every track meet since 2022 in order, predicting each of ${bt.n?n0(bt.n):''} marks from earlier races only. It missed by ${bt.mape??''}% on average (${bt.hawks_mape??''}% for Hawks marks), against ${bt.naive_mape??''}% for repeating the last time in the same event.${be.length>1?` By event, the typical miss ran from ${be[0][1]}% in the ${be[0][0].replace(' Meters',' m')} to ${be[be.length-1][1]}% in the ${be[be.length-1][0].replace(' Meters',' m')}.`:''}</p>
+<h3>Known gaps</h3><ul><li>Athletes come from the cross country rosters for now; track-only Hawks are not yet included.</li><li>Only Hawks results are stored for each meet, so there are no full fields or places beyond what athletic.net lists.</li><li>Grades are projected from cross country meet listings, so athletes who never ran cross country with the Hawks show no grade.</li></ul>`;
+
+// alumni: former Hawks and their results since leaving (school, high school, other clubs), from athletic.net profiles
+let AG='';const AL=D.alumni||[];
+const yrs2=(a,b)=>a.slice(0,4)===b.slice(0,4)?a.slice(0,4):a.slice(0,4)+' to '+b.slice(0,4);
+const aBetter=(a,b)=>a.high?a.v>b.v:a.v<b.v;
+function alumTiles(a){const evs={};a.results.forEach(x=>(evs[x.event]=evs[x.event]||[]).push(x));
+  const odd=e=>/\d m$/.test(e);const top=Object.keys(evs).sort((p,q)=>odd(p)-odd(q)||evs[q].length-evs[p].length).slice(0,4).map(e=>evs[e].reduce((b,x)=>!b||aBetter(x,b)?x:b,null));
+ return `<div class="kv">${top.map(b=>`<div><b>${markHtml(b)}</b><span>${esc(b.event)} best since the Hawks, ${b.date.slice(0,4)}</span></div>`).join('')}</div>`}
+function alumTable(a,open){return `<details class="more"${open?' open':''}><summary>All ${a.n} results since the Hawks</summary><div class="scroll"><table><tr><th>Date</th><th>Meet</th><th>Event</th><th class="n">Mark</th><th class="n">Place</th></tr>
+  ${a.results.slice().reverse().map(x=>`<tr><td>${x.date}</td><td class="w">${esc(x.meet)}<span class="rm">${esc(x.team)}${x.div?', '+esc(x.div):''}</span></td><td>${esc(x.event)}</td><td class="n">${markHtml(x)}</td><td class="n">${esc(x.place||'')}</td></tr>`).join('')}</table></div></details>`}
+
+function renderAlumni(){const list=AL.filter(a=>!AG||a.g===AG);
+ $('#alumSub').textContent=`${AL.length} former Hawks with track results since leaving the club, grouped by the season of their latest result. From their athletic.net profiles (school, high school and other clubs), as of ${fdate(D.meta.as_of)}. Former Hawks with no later results are not listed.`;
+ $('#alumList').innerHTML=list.length?list.map((a,i)=>{const yr=a.last.slice(0,4),head=i===0||list[i-1].last.slice(0,4)!==yr?`<li class="grp"><h3>Last raced ${yr}</h3><p class="meta">${list.filter(x=>x.last.startsWith(yr)).length} alumni, most Hawks races first</p></li>`:'';
+  const lk=(byAth[a.ath]||AT.find(r=>r.name.toLowerCase()===a.name.toLowerCase())||{}).ath;const last=a.results[a.results.length-1];
+  return head+`<li><h3>${lk?`<a href="#" data-lk="${esc(lk)}">${esc(a.name)}</a>`:esc(a.name)}</h3>
+  <p class="meta">${a.hawk_n} Hawks ${a.hawk_n===1?'race':'races'}, ${yrs2(a.hawk_first,a.hawk_last)}${a.sports&&!a.sports.includes('tf')?' (cross country)':''}. Now ${esc(a.team)}. Latest: ${esc(last.event)} ${markHtml(last)} at ${esc(last.meet)}, ${fdate(last.date)}.</p>
+  ${alumTiles(a)}
+  ${alumTable(a)}</li>`}).join('')
+  :'<li class="empty">No alumni match.</li>';
+ $('#alumNote').innerHTML=handNote(list.flatMap(a=>a.results));
+ document.querySelectorAll('#alumList a[data-lk]').forEach(el=>el.onclick=e=>{e.preventDefault();openRunner(el.dataset.lk)})}
+document.querySelectorAll('#alumFilters [data-ag]').forEach(b=>b.onclick=()=>{AG=b.dataset.ag;document.querySelectorAll('#alumFilters [data-ag]').forEach(x=>x.setAttribute('aria-pressed',x===b));renderAlumni()});
+renderRoster();evOpts();renderRecords();$('#runnerBody').innerHTML='<p class="sub" style="margin-top:8px">Pick an athlete to see their expected times, personal records and results. Or tap any name on the other tabs.</p>';renderMeet();
+renderAlumni();
+
+try{const t=localStorage.getItem('dht_tab');if(t)show(t)}catch(e){}
+</script>
+</body>
+</html>
+
+</body></html>

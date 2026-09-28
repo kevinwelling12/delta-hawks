@@ -1,0 +1,8 @@
+dist/
+node_modules/
+.DS_Store
+*.log
+# never commit data or keys: athlete data lives only in the pipeline folder and Firestore
+*.json
+!firebase.json
+*.csv

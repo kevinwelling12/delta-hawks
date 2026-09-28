@@ -1,0 +1,10 @@
+/* sign-in gate and members panel; uses the portal's own colour tokens */
+#dh-gate{position:fixed;inset:0;z-index:50;background:var(--bg);overflow:auto}
+#dh-gate .dh-in{max-width:520px;margin:0 auto;padding:40px var(--pad) 60px}
+#dh-gate .dh-go{background:var(--sel-bg);border-color:var(--sel-bg);color:var(--sel-fg)}
+#dh-members{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.55);overflow:auto}
+#dh-members .dh-panel{max-width:620px;margin:6vh auto;background:var(--bg);border-radius:10px;padding:22px var(--pad) 26px}
+#dh-members .list{margin:10px 0 18px}
+#dh-members form{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#dh-members input{min-height:42px;border:1px solid var(--ctl);border-radius:6px;padding:0 12px;font-size:16px;background:var(--bg);flex:1 1 200px}
+.dh-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
