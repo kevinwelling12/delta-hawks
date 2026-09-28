@@ -15,6 +15,7 @@ cfg = ("window.FIREBASE_CONFIG={apiKey:'demo',authDomain:'demo-delta-hawks.fireb
        if emu else src('firebase-config.js'))
 sdk = ''.join(f'<script src="https://www.gstatic.com/firebasejs/{FIREBASE_SDK}/firebase-{m}-compat.js"></script>\n' for m in ('app', 'auth', 'firestore'))
 
+NAMES = {'xc': 'Hawks XC', 'track': 'Hawks Track'}   # label under the home screen icon (the page title is too long)
 def build(template, key, out):
     html = (root / 'templates' / template).read_text()
     html = html.replace('<script id="data" type="application/json">__DATA__</script>', '<script id="data" type="application/json"></script>')
@@ -30,7 +31,9 @@ def build(template, key, out):
     # links between the two portals stay on this site
     html = (html.replace(f'href="{XC_URL}" target="_blank" rel="noopener"', 'href="./"').replace(f'href="{TRACK_URL}" target="_blank" rel="noopener"', 'href="track.html"')
                 .replace(XC_URL, './').replace(TRACK_URL, 'track.html'))
-    head = ('<meta name="robots" content="noindex,nofollow">\n<style>' + src('gate.css') + '</style>\n' + sdk
+    head = ('<meta name="robots" content="noindex,nofollow">\n'
+            + '<link rel="apple-touch-icon" href="apple-touch-icon.png">\n<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">\n'
+            + f'<meta name="apple-mobile-web-app-title" content="{NAMES[key]}">\n<style>' + src('gate.css') + '</style>\n' + sdk
             + '<script>' + cfg + f'\nwindow.DH_PORTAL={key!r};</script>\n')
     at = html.find('</head>') if '</head>' in html else html.find('<body')   # the track template has no </head>
     assert at > 0, template
@@ -42,5 +45,8 @@ def build(template, key, out):
     dest.write_text(html)
     print(f'wrote dist/{out} ({len(html):,} bytes)')
 
+import shutil
+for f in (root / 'src' / 'static').iterdir():   # icons, served next to the pages
+    (root / 'dist').mkdir(exist_ok=True); shutil.copy(f, root / 'dist' / f.name)
 build('portal_template.html', 'xc', 'index.html')
 build('track_portal_template.html', 'track', 'track.html')
