@@ -15,10 +15,16 @@
   }
   firebase.initializeApp(window.FIREBASE_CONFIG);
   const auth = firebase.auth(), db = firebase.firestore();
-  // Safari on iPhone can stall Firestore's default streaming connection; long polling is the reliable path there
-  db.settings({ experimentalForceLongPolling: true, merge: true });
+  // Connection type: Firestore's default auto-detects long polling where needed (forcing it throws alongside that default).
   if (window.DH_EMULATOR) { auth.useEmulator('http://127.0.0.1:9099'); db.useEmulator('127.0.0.1', 8080); }
-  let me = null, started = false;
+  let me = null, started = false, stage = 'starting';
+  // Watchdog: if the portal has not started after 20 s, say where it is stuck instead of leaving a blank or spinning page.
+  setTimeout(() => {
+    if (started || !gate.hidden && !/Loading|Checking/.test(box.textContent)) return;
+    show(`<h2>Taking longer than usual</h2><p>The portal hasn't opened yet. This is usually a weak connection.</p>
+      <p><button class="chip dh-go" data-dh="retry">Try again</button> <button class="chip" data-dh="signout">Sign out</button></p>
+      <p class="sub" style="margin-top:18px">Details for Kevin: stuck at "${esc(stage)}" (${esc(navigator.userAgent)})</p>`);
+  }, 20000);
 
   // ---- IndexedDB cache: one record per portal, {version, text}
   const idb = () => new Promise((res, rej) => {
@@ -26,7 +32,8 @@
     r.onupgradeneeded = () => r.result.createObjectStore('portals');
     r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
   });
-  const cacheGet = async k => { try { const d = await idb(); return await new Promise(res => { const q = d.transaction('portals').objectStore('portals').get(k); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); }); } catch (e) { return null; } };
+  const cacheGet = k => Promise.race([cacheGet0(k), new Promise(res => setTimeout(() => res(null), 4000))]);   // Safari's storage can fail to answer: skip it
+  const cacheGet0 = async k => { try { const d = await idb(); return await new Promise(res => { const q = d.transaction('portals').objectStore('portals').get(k); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); }); } catch (e) { return null; } };
   const cachePut = async (k, v) => { try { const d = await idb(); d.transaction('portals', 'readwrite').objectStore('portals').put(v, k); } catch (e) {} };
   const cacheDel = async k => { try { const d = await idb(); await new Promise(res => { const t = d.transaction('portals', 'readwrite'); t.objectStore('portals').delete(k); t.oncomplete = t.onerror = t.onabort = res; }); } catch (e) {} };
   const cacheClear = async () => { try { const d = await idb(); await new Promise(res => { const t = d.transaction('portals', 'readwrite'); t.objectStore('portals').clear(); t.oncomplete = t.onerror = t.onabort = res; }); } catch (e) {} };
@@ -158,14 +165,17 @@
       <p><button class="chip" data-dh="signout">Use a different account</button></p>`); };
   const checkMember = async email => { const d = await timeout(db.doc('members/' + email).get(), 12000); return d.exists ? d.data() : null; };
 
+  stage = 'restoring sign-in';
   auth.onAuthStateChanged(async user => {
     if (!user) { lastErr ? failed(lastErr) : signInCard(); return; }
     if (started) return;
+    stage = 'reading saved copy';
     const email = (user.email || '').toLowerCase(), known = memo.get(), cached = await cacheGet(KEY);
 
     // Seen here before: open the saved copy now, then check membership and newer results in the background.
     if (known && known.email === email && cached && cached.gz) {
-      try { start({ text: await gunzip(cached.gz) }, known.role, email); } catch (e) { broken(e); return; }
+      stage = 'opening saved copy';
+      try { start({ text: await timeout(gunzip(cached.gz), 15000) }, known.role, email); } catch (e) { broken(e); return; }
       try {
         const m = await checkMember(email);
         if (!m) { await cacheClear(); memo.clear(); location.reload(); return; }   // removed: reload shows "Not on the list"
@@ -176,14 +186,17 @@
       return;
     }
 
+    stage = 'checking invite';
     show('<h2>Delta Hawks results</h2><p class="sub">Checking your invite…</p>');
     let m;
     try { m = await checkMember(email); } catch (e) { stalled(e); return; }
     if (!m) { notInvited(email); return; }
     memo.set({ email, role: m.role });
+    stage = 'downloading results';
     show('<h2>Delta Hawks results</h2><p class="sub">Loading results…</p>');
     let rec;
     try { rec = await timeout(loadData(), 45000); } catch (e) { stalled(e); return; }
+    stage = 'starting portal';
     try { start(rec, m.role, email); } catch (e) { broken(e); }
   });
   function newResults() {                                         // newer results were saved in the background
