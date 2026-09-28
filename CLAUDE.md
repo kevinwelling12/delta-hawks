@@ -18,6 +18,9 @@ the sibling folder ../delta-hawks (private, not in git; read its CLAUDE.md for t
   2. Signed-in flows: stub Firebase serving the real chunks, in WebKit: first visit, return visit
      (saved copy), newer version, removed member, stalled connection.
   Also check the live rules: an unauthenticated read of portals/xc must be denied.
+  Serve local test pages only on this Mac: `python3 -m http.server --bind 127.0.0.1 PORT` from the scratchpad,
+  never the pipeline's portal/ folder on all interfaces (a server like that exposed every athlete's data
+  on the home Wi-Fi until 2026-09-27).
 - Gate behavior (src/gate.js): first visit on a device checks members/{email}, downloads the portal,
   saves the gzipped copy in IndexedDB and remembers the member in localStorage ('dh-member'). Return
   visits open from that copy at once and check membership and version in the background (removed:
