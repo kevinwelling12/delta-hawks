@@ -1,4 +1,18 @@
-<div id="dh-gate"><div class="band"><header class="top"><h1 style="letter-spacing:.2em">Delta Hawks</h1></header></div><div class="dh-in"><div class="dh-box"><h2>Delta Hawks results</h2><p class="sub">Loading…</p></div></div></div>
+<div id="dh-gate" hidden><div class="band"><header class="top"><h1 style="letter-spacing:.2em">Delta Hawks</h1></header></div><div class="dh-in"><div class="dh-box"><h2>Delta Hawks results</h2><p class="sub">Loading…</p></div></div></div>
+<script>
+// Show "Loading..." only if the portal takes more than a moment (a return visit opens from the saved copy in well under
+// that, so there is no flash). Separate from gate.js, so even if that script fails to run the page is never silently blank.
+(function () {
+  var g = document.getElementById('dh-gate');
+  setTimeout(function () { if (!window.DH_STARTED && g.hidden) g.hidden = false; }, 600);
+  setTimeout(function () {
+    if (window.DH_STARTED || window.DH_GATE_RUNNING) return;   // gate.js has its own watchdog with details
+    g.querySelector('.dh-box').innerHTML = '<h2>Couldn\'t start</h2><p>The page failed to start. Please try again.</p>' +
+      '<p><button class="chip dh-go" onclick="location.reload()">Try again</button></p>';
+    g.hidden = false;
+  }, 20000);
+})();
+</script>
 <div id="dh-members" hidden><div class="dh-panel">
  <div class="dh-head"><h2 style="margin:0">Members</h2><button class="chip" data-dh="close">Close</button></div>
  <p class="sub" style="margin-top:8px">Anyone listed here can sign in with that Google account. Admins can add and remove members; coaches can view everything.</p>

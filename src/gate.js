@@ -4,6 +4,7 @@
 // IndexedDB by version, so a normal visit costs two small reads. Then the portal's own script runs
 // exactly as in the claude.ai build.
 (function () {
+  window.DH_GATE_RUNNING = true;
   const KEY = window.DH_PORTAL, $ = s => document.querySelector(s);
   const gate = $('#dh-gate'), box = $('#dh-gate .dh-box');
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -146,7 +147,7 @@
     window.addEventListener('error', h);
     try { runApp(rec.text); } finally { window.removeEventListener('error', h); }
     if (errs.length) throw Object.assign(new Error(errs[0]), { code: 'app' });
-    me = { email, role }; started = true; accountLine(); gate.hidden = true;
+    me = { email, role }; started = window.DH_STARTED = true; accountLine(); gate.hidden = true;
     try { sessionStorage.removeItem('dh-retry'); } catch (e) {}
   };
   // The portal failed to start: drop this device's copy and reload once with a fresh download, then show the error.
@@ -214,24 +215,34 @@
     document.body.appendChild(ind);
     const label = t => { ind.querySelector('span').textContent = t; };
     const PULL = 70;                                           // finger travel (px) needed to refresh
-    let y0 = null, x0 = 0, dist = 0, busy = false;
-    const reset = () => { ind.classList.add('on'); ind.classList.remove('ready'); ind.style.opacity = 0; ind.style.transform = 'translate(-50%,-70px)'; };
+    let y0 = null, x0 = 0, dist = 0, busy = false, axis = null, frame = 0, ready = false;
+    const reset = () => { ind.classList.add('on'); ind.classList.remove('ready'); ind.style.opacity = 0; ind.style.transform = 'translate(-50%,-70px)'; ready = false; };
     const blocked = () => !started || busy || !$('#dh-members').hidden || window.scrollY > 0;
+    const draw = () => {                                        // once per screen refresh, so the pill tracks the finger smoothly
+      frame = 0;
+      ind.style.opacity = Math.min(dist / PULL, 1);
+      ind.style.transform = `translate(-50%,${Math.min(dist * 0.6, PULL + 20) - 70}px)`;
+      if ((dist >= PULL) !== ready) { ready = dist >= PULL; ind.classList.toggle('ready', ready); label(ready ? 'Release to refresh' : 'Pull to refresh'); }
+    };
     document.addEventListener('touchstart', e => {
       if (blocked() || e.touches.length !== 1) { y0 = null; return; }
-      y0 = e.touches[0].clientY; x0 = e.touches[0].clientX; dist = 0; ind.classList.remove('on');
+      y0 = e.touches[0].clientY; x0 = e.touches[0].clientX; dist = 0; axis = null; ind.classList.remove('on');
     }, { passive: true });
     document.addEventListener('touchmove', e => {
       if (y0 === null) return;
       const dy = e.touches[0].clientY - y0, dx = e.touches[0].clientX - x0;
-      if (window.scrollY > 0 || dy <= 0 || Math.abs(dx) > dy) { if (dist) reset(); y0 = dist > 0 ? null : y0; dist = 0; return; }   // scrolling or sideways swipe
-      dist = dy;
-      const shown = Math.min(dy * 0.6, PULL + 20);
-      ind.style.opacity = Math.min(dy / PULL, 1); ind.style.transform = `translate(-50%,${shown - 70}px)`;
-      ind.classList.toggle('ready', dy >= PULL); label(dy >= PULL ? 'Release to refresh' : 'Pull to refresh');
+      if (!axis) {                                              // decide once, after a little movement: a downward pull, or anything else
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+        axis = dy > 0 && dy > Math.abs(dx) ? 'pull' : 'other';
+        if (axis === 'other') { y0 = null; return; }
+      }
+      if (window.scrollY > 0) { y0 = null; dist = 0; reset(); return; }   // the page scrolled instead
+      dist = Math.max(dy, 0);
+      if (!frame) frame = requestAnimationFrame(draw);
     }, { passive: true });
     document.addEventListener('touchend', async () => {
       if (y0 === null) return; y0 = null;
+      if (frame) { cancelAnimationFrame(frame); frame = 0; }
       if (dist < PULL) { reset(); dist = 0; return; }
       dist = 0; busy = true; ind.classList.add('on', 'busy'); ind.classList.remove('ready'); ind.style.opacity = 1; ind.style.transform = 'translate(-50%,0)';
       label('Checking for new results');
