@@ -15,6 +15,14 @@ cfg = ("window.FIREBASE_CONFIG={apiKey:'demo',authDomain:'demo-delta-hawks.fireb
        if emu else src('firebase-config.js'))
 sdk = ''.join(f'<script src="https://www.gstatic.com/firebasejs/{FIREBASE_SDK}/firebase-{m}-compat.js"></script>\n' for m in ('app', 'auth', 'firestore'))
 
+import datetime, os, subprocess
+def _sha():
+    try: return os.environ.get('GITHUB_SHA') or subprocess.run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True, cwd=root).stdout.strip()
+    except Exception: return ''
+# version stamp shown in the footer, in Pacific time: helps tell whether an update has reached a device
+from zoneinfo import ZoneInfo
+_pt = datetime.datetime.now(ZoneInfo('America/Los_Angeles'))
+BUILD = _pt.strftime('%b %-d, %-I:%M %p').replace('AM', 'am').replace('PM', 'pm') + (' · ' + _sha()[:7] if _sha() else '')
 NAMES = {'xc': 'Hawks XC', 'track': 'Hawks Track'}   # label under the home screen icon (the page title is too long)
 def build(template, key, out):
     html = (root / 'templates' / template).read_text()
@@ -31,7 +39,7 @@ def build(template, key, out):
     # links between the two portals stay on this site
     html = (html.replace(f'href="{XC_URL}" target="_blank" rel="noopener"', 'href="./"').replace(f'href="{TRACK_URL}" target="_blank" rel="noopener"', 'href="track.html"')
                 .replace(XC_URL, './').replace(TRACK_URL, 'track.html'))
-    head = ('<meta name="robots" content="noindex,nofollow">\n'
+    head = (f'<script>window.DH_BUILD={BUILD!r};</script>\n' + '<meta name="robots" content="noindex,nofollow">\n'
             + '<link rel="apple-touch-icon" href="apple-touch-icon.png">\n<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">\n'
             + f'<meta name="apple-mobile-web-app-title" content="{NAMES[key]}">\n<style>' + src('gate.css') + '</style>\n' + sdk
             + '<script>' + cfg + f'\nwindow.DH_PORTAL={key!r};</script>\n')

@@ -76,7 +76,7 @@
   function accountLine() {
     const foot = $('footer.foot'); if (!foot || $('#dh-acct')) return;
     const p = document.createElement('p'); p.id = 'dh-acct'; p.style.margin = '6px 0 0';
-    p.innerHTML = `Signed in as ${esc(me.email)}${me.role === 'admin' ? ' · <a href="#" data-dh="members">Members</a>' : ''} · <a href="#" data-dh="signout">Sign out</a>`;
+    p.innerHTML = `Signed in as ${esc(me.email)}${me.role === 'admin' ? ' · <a href="#" data-dh="members">Members</a>' : ''} · <a href="#" data-dh="signout">Sign out</a>${window.DH_BUILD ? `<br><span style="font-size:12px;color:var(--faint)">Version ${esc(window.DH_BUILD)}</span>` : ''}`;
     foot.appendChild(p);
   }
   document.addEventListener('click', e => {
