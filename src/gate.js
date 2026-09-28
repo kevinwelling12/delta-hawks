@@ -209,7 +209,7 @@
 
   // ---- Pull to refresh, for the home screen web app (it has no reload button; Safari tabs have their own).
   // Pull down at the top of the page; on release, download newer results if there are any, then reload.
-  const standalone = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches || window.DH_PTR === true;
+  const standalone = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
   if (standalone) {
     const ind = document.createElement('div'); ind.id = 'dh-ptr'; ind.innerHTML = '<i>↓</i><span>Pull to refresh</span>';
     document.body.appendChild(ind);

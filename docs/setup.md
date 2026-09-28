@@ -39,9 +39,8 @@ Open the site, sign in with Google. Add your wife and coaches from **Members** i
 (or with `--add EMAIL coach "Name"`), then send them the link.
 
 ## Day to day
-- New results: `python3 scripts/update.py raw/<file>.csv --web` (reruns the model, rebuilds the
-  claude.ai file, uploads to the web site). Track: run `track_model.py` first, then
-  `publish_web.py`. Viewers get the new data on their next visit.
+- New results: `python3 scripts/update.py raw/<file>.csv --web` (reruns both models, uploads to the
+  web site). Viewers get the new data on their next visit, or by pulling down in the home screen app.
 - Design changes: edit `templates/`, push. GitHub rebuilds the site.
 
 ## Troubleshooting

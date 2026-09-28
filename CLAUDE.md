@@ -18,5 +18,14 @@ the sibling folder ../delta-hawks (private, not in git; read its CLAUDE.md for t
   2. Signed-in flows: stub Firebase serving the real chunks, in WebKit: first visit, return visit
      (saved copy), newer version, removed member, stalled connection.
   Also check the live rules: an unauthenticated read of portals/xc must be denied.
+- Gate behavior (src/gate.js): first visit on a device checks members/{email}, downloads the portal,
+  saves the gzipped copy in IndexedDB and remembers the member in localStorage ('dh-member'). Return
+  visits open from that copy at once and check membership and version in the background (removed:
+  clear and reload to "Not on the list"; newer: download and show a reload note). "Loading..." shows
+  only after 600 ms (inline script in gate.html, which also covers gate.js failing); gate.js has a
+  20 s watchdog naming the stuck step. If the portal script errors on start, the copy is dropped and
+  the page reloads once. Pull to refresh exists only in the home screen web app (standalone).
+  The footer shows a version stamp (build time Pacific + commit) to tell whether an update arrived;
+  GitHub Pages sends max-age=600, so devices can hold a page for 10 minutes.
 - Don't call db.settings() with long-polling options: this SDK auto-detects by default and throws if forced.
 - Kevin prefers plain, direct writing: no em dashes, no filler.
