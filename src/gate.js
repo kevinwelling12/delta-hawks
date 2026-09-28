@@ -205,4 +205,41 @@
     n.innerHTML = 'New results are available. <a href="#" data-dh="retry">Reload to see them</a>.';
     main.prepend(n);
   }
+
+  // ---- Pull to refresh, for the home screen web app (it has no reload button; Safari tabs have their own).
+  // Pull down at the top of the page; on release, download newer results if there are any, then reload.
+  const standalone = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches || window.DH_PTR === true;
+  if (standalone) {
+    const ind = document.createElement('div'); ind.id = 'dh-ptr'; ind.innerHTML = '<i>↓</i><span>Pull to refresh</span>';
+    document.body.appendChild(ind);
+    const label = t => { ind.querySelector('span').textContent = t; };
+    const PULL = 70;                                           // finger travel (px) needed to refresh
+    let y0 = null, x0 = 0, dist = 0, busy = false;
+    const reset = () => { ind.classList.add('on'); ind.classList.remove('ready'); ind.style.opacity = 0; ind.style.transform = 'translate(-50%,-70px)'; };
+    const blocked = () => !started || busy || !$('#dh-members').hidden || window.scrollY > 0;
+    document.addEventListener('touchstart', e => {
+      if (blocked() || e.touches.length !== 1) { y0 = null; return; }
+      y0 = e.touches[0].clientY; x0 = e.touches[0].clientX; dist = 0; ind.classList.remove('on');
+    }, { passive: true });
+    document.addEventListener('touchmove', e => {
+      if (y0 === null) return;
+      const dy = e.touches[0].clientY - y0, dx = e.touches[0].clientX - x0;
+      if (window.scrollY > 0 || dy <= 0 || Math.abs(dx) > dy) { if (dist) reset(); y0 = dist > 0 ? null : y0; dist = 0; return; }   // scrolling or sideways swipe
+      dist = dy;
+      const shown = Math.min(dy * 0.6, PULL + 20);
+      ind.style.opacity = Math.min(dy / PULL, 1); ind.style.transform = `translate(-50%,${shown - 70}px)`;
+      ind.classList.toggle('ready', dy >= PULL); label(dy >= PULL ? 'Release to refresh' : 'Pull to refresh');
+    }, { passive: true });
+    document.addEventListener('touchend', async () => {
+      if (y0 === null) return; y0 = null;
+      if (dist < PULL) { reset(); dist = 0; return; }
+      dist = 0; busy = true; ind.classList.add('on', 'busy'); ind.classList.remove('ready'); ind.style.opacity = 1; ind.style.transform = 'translate(-50%,0)';
+      label('Checking for new results');
+      try {
+        const cached = await cacheGet(KEY), meta = await timeout(db.doc('portals/' + KEY).get(), 10000);
+        if (meta.exists && (!cached || meta.data().version !== cached.version)) { label('Downloading new results'); await timeout(loadData(), 45000); }
+      } catch (e) {}                                            // offline or slow: reload anyway, the saved copy still opens
+      location.reload();
+    });
+  }
 })();

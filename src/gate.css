@@ -8,3 +8,10 @@
 #dh-members form{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 #dh-members input{min-height:42px;border:1px solid var(--ctl);border-radius:6px;padding:0 12px;font-size:16px;background:var(--bg);flex:1 1 200px}
 .dh-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+/* pull to refresh (home screen web app only) */
+#dh-ptr{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:70;transform:translate(-50%,-70px);display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:var(--sel-bg);color:var(--sel-fg);font:600 14px/1 var(--cond);letter-spacing:.06em;text-transform:uppercase;box-shadow:0 6px 18px -8px rgba(0,0,0,.5);pointer-events:none;opacity:0}
+#dh-ptr.on{transition:transform .2s,opacity .2s}
+#dh-ptr i{display:inline-block;width:14px;height:14px;font-style:normal;transition:transform .15s}
+#dh-ptr.ready i{transform:rotate(180deg)}
+#dh-ptr.busy i{border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:dh-spin .8s linear infinite}
+@keyframes dh-spin{to{transform:rotate(360deg)}}
