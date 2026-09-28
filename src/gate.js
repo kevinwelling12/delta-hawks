@@ -15,6 +15,8 @@
   }
   firebase.initializeApp(window.FIREBASE_CONFIG);
   const auth = firebase.auth(), db = firebase.firestore();
+  // Safari on iPhone can stall Firestore's default streaming connection; long polling is the reliable path there
+  db.settings({ experimentalForceLongPolling: true, merge: true });
   if (window.DH_EMULATOR) { auth.useEmulator('http://127.0.0.1:9099'); db.useEmulator('127.0.0.1', 8080); }
   let me = null, started = false;
 
@@ -26,7 +28,13 @@
   });
   const cacheGet = async k => { try { const d = await idb(); return await new Promise(res => { const q = d.transaction('portals').objectStore('portals').get(k); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); }); } catch (e) { return null; } };
   const cachePut = async (k, v) => { try { const d = await idb(); d.transaction('portals', 'readwrite').objectStore('portals').put(v, k); } catch (e) {} };
-  const cacheClear = async () => { try { const d = await idb(); d.transaction('portals', 'readwrite').objectStore('portals').clear(); } catch (e) {} };
+  const cacheClear = async () => { try { const d = await idb(); await new Promise(res => { const t = d.transaction('portals', 'readwrite'); t.objectStore('portals').clear(); t.oncomplete = t.onerror = t.onabort = res; }); } catch (e) {} };
+
+  // who was let in on this device last time (for opening from the saved copy while the check runs)
+  const memo = { get: () => { try { return JSON.parse(localStorage.getItem('dh-member') || 'null'); } catch (e) { return null; } },
+                 set: v => { try { localStorage.setItem('dh-member', JSON.stringify(v)); } catch (e) {} },
+                 clear: () => { try { localStorage.removeItem('dh-member'); } catch (e) {} } };
+  const timeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(Object.assign(new Error('The connection timed out.'), { code: 'timeout' })), ms))]);
 
   async function gunzip(bytes) {
     if (!window.DecompressionStream) throw new Error('This browser is too old to open the portal. Please update it.');
@@ -67,7 +75,8 @@
     const a = e.target.closest('[data-dh]'); if (!a) return; e.preventDefault();
     const act = a.dataset.dh;
     if (act === 'signin') { lastErr = null; signIn(); }
-    else if (act === 'signout') { cacheClear(); auth.signOut().then(() => location.reload()); }
+    else if (act === 'retry') location.reload();
+    else if (act === 'signout') { cacheClear(); memo.clear(); auth.signOut().then(() => location.reload()); }
     else if (act === 'members') openMembers();
     else if (act === 'close') $('#dh-members').hidden = true;
     else if (act === 'remove') removeMember(a.dataset.email);
@@ -123,27 +132,44 @@
     <p><button class="chip dh-go" data-dh="signin">Sign in with Google</button></p>`);
 
   auth.getRedirectResult().catch(failed);
+  const start = (rec, role, email) => { me = { email, role }; started = true; runApp(rec.text); accountLine(); gate.hidden = true; };
+  const stalled = e => show(`<h2>Couldn't load the results</h2><p>${esc(e.message || e)} This is usually a weak connection.</p>
+    <p><button class="chip dh-go" data-dh="retry">Try again</button> <button class="chip" data-dh="signout">Sign out</button></p>`);
+  const notInvited = email => { cacheClear(); memo.clear();          // removed members keep nothing on the device
+    show(`<h2>Not on the list yet</h2><p>${esc(email)} hasn't been invited. Ask Kevin to add this address, or sign in with a different Google account.</p>
+      <p><button class="chip" data-dh="signout">Use a different account</button></p>`); };
+  const checkMember = async email => { const d = await timeout(db.doc('members/' + email).get(), 12000); return d.exists ? d.data() : null; };
+
   auth.onAuthStateChanged(async user => {
     if (!user) { lastErr ? failed(lastErr) : signInCard(); return; }
     if (started) return;
-    const email = (user.email || '').toLowerCase();
-    show('<h2>Delta Hawks results</h2><p class="sub">Checking your invite…</p>');
-    let m = null;
-    try { const d = await db.doc('members/' + email).get(); m = d.exists ? d.data() : null; }
-    catch (e) { if (e.code === 'unavailable') { const c = await cacheGet(KEY); if (c) m = { role: 'offline' }; } }
-    if (!m) {
-      cacheClear();                                               // removed members keep nothing on the device
-      show(`<h2>Not on the list yet</h2><p>${esc(email)} hasn't been invited. Ask Kevin to add this address, or sign in with a different Google account.</p>
-        <p><button class="chip" data-dh="signout">Use a different account</button></p>`);
+    const email = (user.email || '').toLowerCase(), known = memo.get(), cached = await cacheGet(KEY);
+
+    // Seen here before: open the saved copy now, then check membership and newer results in the background.
+    if (known && known.email === email && cached) {
+      start(cached, known.role, email);
+      try {
+        const m = await checkMember(email);
+        if (!m) { await cacheClear(); memo.clear(); location.reload(); return; }   // removed: reload shows "Not on the list"
+        memo.set({ email, role: m.role });
+        const meta = await timeout(db.doc('portals/' + KEY).get(), 12000);
+        if (meta.exists && meta.data().version !== cached.version) { await loadData(); newResults(); }
+      } catch (e) {}                                              // offline or slow: keep showing the saved copy
       return;
     }
-    me = { email, role: m.role };
+
+    show('<h2>Delta Hawks results</h2><p class="sub">Checking your invite…</p>');
+    let m;
+    try { m = await checkMember(email); } catch (e) { stalled(e); return; }
+    if (!m) { notInvited(email); return; }
+    memo.set({ email, role: m.role });
     show('<h2>Delta Hawks results</h2><p class="sub">Loading results…</p>');
-    try {
-      const rec = await loadData();
-      started = true; runApp(rec.text); accountLine(); gate.hidden = true;
-    } catch (e) {
-      show(`<h2>Couldn't load the results</h2><p>${esc(e.message || e)}</p><p><button class="chip" data-dh="signout">Sign out</button></p>`);
-    }
+    try { start(await timeout(loadData(), 45000), m.role, email); } catch (e) { stalled(e); }
   });
+  function newResults() {                                         // newer results were saved in the background
+    const main = $('main.wrap'); if (!main || $('#dh-new')) return;
+    const n = document.createElement('p'); n.id = 'dh-new'; n.className = 'note'; n.style.marginTop = '0';
+    n.innerHTML = 'New results are available. <a href="#" data-dh="retry">Reload to see them</a>.';
+    main.prepend(n);
+  }
 })();
