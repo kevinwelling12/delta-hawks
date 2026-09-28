@@ -28,6 +28,7 @@
   });
   const cacheGet = async k => { try { const d = await idb(); return await new Promise(res => { const q = d.transaction('portals').objectStore('portals').get(k); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); }); } catch (e) { return null; } };
   const cachePut = async (k, v) => { try { const d = await idb(); d.transaction('portals', 'readwrite').objectStore('portals').put(v, k); } catch (e) {} };
+  const cacheDel = async k => { try { const d = await idb(); await new Promise(res => { const t = d.transaction('portals', 'readwrite'); t.objectStore('portals').delete(k); t.oncomplete = t.onerror = t.onabort = res; }); } catch (e) {} };
   const cacheClear = async () => { try { const d = await idb(); await new Promise(res => { const t = d.transaction('portals', 'readwrite'); t.objectStore('portals').clear(); t.oncomplete = t.onerror = t.onabort = res; }); } catch (e) {} };
 
   // who was let in on this device last time (for opening from the saved copy while the check runs)
@@ -45,17 +46,17 @@
     const cached = await cacheGet(KEY);
     let meta;
     try { meta = await db.doc('portals/' + KEY).get(); }
-    catch (e) { if (cached) return cached; throw e; }            // offline: use the last copy on this device
+    catch (e) { if (cached && cached.gz) return { ...cached, text: await gunzip(cached.gz) }; throw e; }   // offline: use the last copy on this device
     if (!meta.exists) throw new Error('No results have been published yet.');
     const m = meta.data();
-    if (cached && cached.version === m.version) return cached;
+    if (cached && cached.version === m.version && cached.gz) return { ...cached, text: await gunzip(cached.gz) };
     const parts = await Promise.all(Array.from({ length: m.chunks }, (_, i) =>
       db.doc(`portals/${KEY}/chunks/${String(i).padStart(3, '0')}`).get()));
     const arrs = parts.map(p => p.data().data.toUint8Array()), all = new Uint8Array(arrs.reduce((n, a) => n + a.length, 0));
     let o = 0; arrs.forEach(a => { all.set(a, o); o += a.length; });
-    const rec = { version: m.version, updated: m.updated, text: await gunzip(all) };
+    const rec = { version: m.version, updated: m.updated, gz: all };   // saved compressed (about 1 MB); Safari handles that far better than a 10 MB string
     cachePut(KEY, rec);
-    return rec;
+    return { ...rec, text: await gunzip(all) };
   }
   function runApp(text) {
     $('#data').textContent = text;
@@ -132,7 +133,24 @@
     <p><button class="chip dh-go" data-dh="signin">Sign in with Google</button></p>`);
 
   auth.getRedirectResult().catch(failed);
-  const start = (rec, role, email) => { me = { email, role }; started = true; runApp(rec.text); accountLine(); gate.hidden = true; };
+  // Runs the portal. Inline scripts run as they are appended, so any error in the portal's own script is caught here.
+  const start = (rec, role, email) => {
+    const errs = [], h = e => errs.push(e.message || String(e));
+    window.addEventListener('error', h);
+    try { runApp(rec.text); } finally { window.removeEventListener('error', h); }
+    if (errs.length) throw Object.assign(new Error(errs[0]), { code: 'app' });
+    me = { email, role }; started = true; accountLine(); gate.hidden = true;
+    try { sessionStorage.removeItem('dh-retry'); } catch (e) {}
+  };
+  // The portal failed to start: drop this device's copy and reload once with a fresh download, then show the error.
+  const broken = async e => {
+    await cacheDel(KEY);
+    let again = false; try { again = sessionStorage.getItem('dh-retry') === '1'; sessionStorage.setItem('dh-retry', '1'); } catch (x) {}
+    if (!again) { location.reload(); return; }
+    show(`<h2>Couldn't open the results</h2><p>Something went wrong starting the portal on this device.</p>
+      <p><button class="chip dh-go" data-dh="retry">Try again</button> <button class="chip" data-dh="signout">Sign out</button></p>
+      <p class="sub" style="margin-top:18px">Details for Kevin: ${esc(e.message || e)} (${esc(navigator.userAgent)})</p>`);
+  };
   const stalled = e => show(`<h2>Couldn't load the results</h2><p>${esc(e.message || e)} This is usually a weak connection.</p>
     <p><button class="chip dh-go" data-dh="retry">Try again</button> <button class="chip" data-dh="signout">Sign out</button></p>`);
   const notInvited = email => { cacheClear(); memo.clear();          // removed members keep nothing on the device
@@ -146,8 +164,8 @@
     const email = (user.email || '').toLowerCase(), known = memo.get(), cached = await cacheGet(KEY);
 
     // Seen here before: open the saved copy now, then check membership and newer results in the background.
-    if (known && known.email === email && cached) {
-      start(cached, known.role, email);
+    if (known && known.email === email && cached && cached.gz) {
+      try { start({ text: await gunzip(cached.gz) }, known.role, email); } catch (e) { broken(e); return; }
       try {
         const m = await checkMember(email);
         if (!m) { await cacheClear(); memo.clear(); location.reload(); return; }   // removed: reload shows "Not on the list"
@@ -164,7 +182,9 @@
     if (!m) { notInvited(email); return; }
     memo.set({ email, role: m.role });
     show('<h2>Delta Hawks results</h2><p class="sub">Loading results…</p>');
-    try { start(await timeout(loadData(), 45000), m.role, email); } catch (e) { stalled(e); }
+    let rec;
+    try { rec = await timeout(loadData(), 45000); } catch (e) { stalled(e); return; }
+    try { start(rec, m.role, email); } catch (e) { broken(e); }
   });
   function newResults() {                                         // newer results were saved in the background
     const main = $('main.wrap'); if (!main || $('#dh-new')) return;
