@@ -7,7 +7,7 @@ The templates in templates/ are shared with the claude.ai build (../delta-hawks/
 import pathlib, re, sys
 root = pathlib.Path(__file__).resolve().parent
 FIREBASE_SDK = '10.12.2'
-XC_URL, TRACK_URL = 'https://claude.ai/artifact/9ec7RgWJduQruEPNtHDL6S', 'https://claude.ai/artifact/NJZoGtcinARPJcTtTse9UE'
+XC_URL, TRACK_URL = 'https://claude.ai/artifact/Kf7MfZowHdKM2tPsAEfgRH', 'https://claude.ai/artifact/SPA2xn2XM8rqnVsvLGBsqs'
 emu = '--emulator' in sys.argv
 src = lambda f: (root / 'src' / f).read_text()
 
