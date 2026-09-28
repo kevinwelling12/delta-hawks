@@ -66,7 +66,7 @@
   document.addEventListener('click', e => {
     const a = e.target.closest('[data-dh]'); if (!a) return; e.preventDefault();
     const act = a.dataset.dh;
-    if (act === 'signin') signIn();
+    if (act === 'signin') { lastErr = null; signIn(); }
     else if (act === 'signout') { cacheClear(); auth.signOut().then(() => location.reload()); }
     else if (act === 'members') openMembers();
     else if (act === 'close') $('#dh-members').hidden = true;
@@ -97,17 +97,34 @@
     } catch (e2) { alert(e2.message); }
   });
 
+  // Links opened inside another app (Gmail, Facebook, Instagram, the Google app...) use a built-in browser
+  // that Google blocks for sign-in and that loses the sign-in state; ask for Safari or Chrome instead.
+  const inApp = /FBAN|FBAV|FB_IAB|Instagram|Line\/|GSA\/|LinkedInApp|Snapchat|Twitter|MicroMessenger|; wv\)/.test(navigator.userAgent);
+  const openHint = '<p class="sub">If you opened this link inside another app (Gmail, Messages preview, Facebook, the Google app), use its menu to <b>Open in Safari</b> (or Chrome), then sign in there.</p>';
   async function signIn() {
     const p = new firebase.auth.GoogleAuthProvider(); p.setCustomParameters({ prompt: 'select_account' });
     try { await auth.signInWithPopup(p); }
-    catch (e) { if (/popup/.test(e.code || '')) return auth.signInWithRedirect(p); alert('Sign-in failed: ' + (e.message || e)); }
+    catch (e) {
+      const c = e.code || '';
+      if (c === 'auth/popup-blocked' || c === 'auth/operation-not-supported-in-this-environment') return auth.signInWithRedirect(p);
+      if (c === 'auth/popup-closed-by-user' || c === 'auth/cancelled-popup-request' || c === 'auth/user-cancelled') return;   // they closed the Google window: stay on the sign-in card
+      failed(e);
+    }
+  }
+  let lastErr = null;
+  function failed(e) {
+    lastErr = e;
+    show(`<h2>Sign-in didn't finish</h2><p>Please tap the button to try again.</p>
+      <p><button class="chip dh-go" data-dh="signin">Sign in with Google</button></p>${openHint}
+      <p class="sub" style="margin-top:18px">Details: ${esc(e.message || e)}</p>`);
   }
   const signInCard = () => show(`<h2>Delta Hawks results</h2><p>This portal is for invited members of the club. Sign in with the Google account your invite was sent to.</p>
+    ${inApp ? '<p class="note">This page is open inside another app, where Google sign-in does not work. Use the app\'s menu to <b>Open in Safari</b> (or Chrome), then sign in there.</p>' : ''}
     <p><button class="chip dh-go" data-dh="signin">Sign in with Google</button></p>`);
 
-  auth.getRedirectResult().catch(e => alert('Sign-in failed: ' + (e.message || e)));
+  auth.getRedirectResult().catch(failed);
   auth.onAuthStateChanged(async user => {
-    if (!user) { signInCard(); return; }
+    if (!user) { lastErr ? failed(lastErr) : signInCard(); return; }
     if (started) return;
     const email = (user.email || '').toLowerCase();
     show('<h2>Delta Hawks results</h2><p class="sub">Checking your invite…</p>');
