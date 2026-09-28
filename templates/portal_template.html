@@ -252,7 +252,10 @@ input.tin[aria-invalid="true"]{border-color:#B3261E;box-shadow:inset 0 0 0 1px #
 try{if(new URLSearchParams(location.search).has('embed'))document.documentElement.classList.add('framed')}catch(e){}
 const D=JSON.parse(document.getElementById('data').textContent);
 const $=s=>document.querySelector(s);
-const fmt=s=>{if(s==null)return'';const t=Math.round(s*10)/10,m=Math.floor(t/60),r=t-m*60;return m+':'+(r<10?'0':'')+r.toFixed(1)};  // round first so 9.96 s shows as 10.0, not 010.0
+// predictions, ranges and equivalents: whole seconds (round first so 59.6 s shows as 1:00, not 0:60)
+const fmt=s=>{if(s==null)return'';const t=Math.round(s),m=Math.floor(t/60),r=t-m*60;return m+':'+(r<10?'0':'')+r};
+// recorded times (course bests): keep the timing precision, up to hundredths
+const fmtT=s=>{if(s==null)return'';const t=Math.round(s*100)/100,m=Math.floor(t/60),r=+(t-m*60).toFixed(2);return m+':'+(r<10?'0':'')+r};
 const nth=n=>n+(n%100>=11&&n%100<=13?'th':({1:'st',2:'nd',3:'rd'}[n%10]||'th'));
 const fdate=d=>new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -351,7 +354,7 @@ function renderMeetRoster(key,base){
  const ord=g=>m.races.findIndex(x=>g.startsWith(x));
  const groups=[...new Set(rows.map(x=>x.u.race))].sort((a,b)=>ord(a)-ord(b)||a.length-b.length);
  $('#rosterList').innerHTML=rows.length?groups.map(g=>`<li class="grp"><h3>${esc(g)}</h3></li>`+rows.filter(x=>x.u.race===g).sort((a,b)=>a.u.pred-b.u.pred).map(({r,u},i)=>`<li><button class="ranked" data-id="${esc(r.id)}"><span class="rk">${i+1}</span><span class="rn">${esc(r.name)}</span>
-  <span class="rm">${u.place?`About ${nth(u.place)} of ${u.field} (vs ${u.field_year} field). `:''}${u.pr?'Course best '+fmt(u.pr)+', '+Math.round(u.p_pr*100)+'% chance of a new one':'First race at this course and distance'}${u.unsure?'. Age group not certain':''}</span>
+  <span class="rm">${u.place?`About ${nth(u.place)} of ${u.field} (vs ${u.field_year} field). `:''}${u.pr?'Course best '+fmtT(u.pr)+', '+Math.round(u.p_pr*100)+'% chance of a new one':'First race at this course and distance'}${u.unsure?'. Age group not certain':''}</span>
   <span class="rt">${fmt(u.pred)}<small>${fmt(u.lo)} to ${fmt(u.hi)}</small></span></button></li>`).join('')).join(''):empty;
  document.querySelectorAll('#rosterList button').forEach(b=>b.onclick=()=>{openRunner(b.dataset.id)});
 }
@@ -368,7 +371,7 @@ $('#runnerSel').onchange=e=>renderRunner(e.target.value);
 function openRunner(id){$('#runnerSel').value=id;renderRunner(id);show('runner');window.scrollTo(0,0)}
 function strip(p){
  const lo=Math.min(p.lo,p.pr||p.lo),hi=Math.max(p.hi,p.pr||p.hi),pad=(hi-lo)*.12||10,a=lo-pad,b=hi+pad,x=v=>((v-a)/(b-a)*100).toFixed(2)+'%';
- return `<div class="strip" role="img" aria-label="Expected ${fmt(p.pred)}, likely range ${fmt(p.lo)} to ${fmt(p.hi)}${p.pr?', personal best '+fmt(p.pr):''}">
+ return `<div class="strip" role="img" aria-label="Expected ${fmt(p.pred)}, likely range ${fmt(p.lo)} to ${fmt(p.hi)}${p.pr?', personal best '+fmtT(p.pr):''}">
  <div class="track"></div><div class="band" style="left:${x(p.lo)};width:calc(${x(p.hi)} - ${x(p.lo)})"></div>
  <div class="mid" style="left:${x(p.pred)}"></div>${p.pr?`<div class="pr${p.pr>=p.lo&&p.pr<=p.hi?' in':''}" style="left:${x(p.pr)}"></div>`:''}
  <span class="lab" style="left:${x(p.lo)}">${fmt(p.lo)}</span><span class="lab" style="left:${x(p.hi)}">${fmt(p.hi)}</span></div>`}
@@ -449,7 +452,7 @@ let progW=0;window.addEventListener('resize',()=>{const el=document.getElementBy
 const md=d=>fdate(d).replace(/,\s\d{4}$/,'');
 const pctTxt=p=>p==null?'':p>=.995?', a new best is near certain':`, ${Math.max(1,Math.round(p*100))}% chance of a new one`;
 function upRow(u){return `<li><span class="ln">${esc(u.meet)}</span><span class="lm">${md(u.date)}, ${esc(u.race)}${u.unsure?' *':''}${u.new_course?' †':''}</span>
- <span class="lm">${u.place?`About ${nth(u.place)} of ${u.field}. `:''}${u.pr?`Course best ${fmt(u.pr)}${pctTxt(u.p_pr)}`:'First race at this course and distance'}</span>
+ <span class="lm">${u.place?`About ${nth(u.place)} of ${u.field}. `:''}${u.pr?`Course best ${fmtT(u.pr)}${pctTxt(u.p_pr)}`:'First race at this course and distance'}</span>
  <span class="lt">${fmt(u.pred)}<small>${fmt(u.lo)} to ${fmt(u.hi)}</small></span></li>`}
 function histList(r){
  const team=x=>x.team&&x.team!=='Delta Hawks'&&x.team!=='Unattached'?`, for ${esc(x.team)}`:'';
@@ -468,7 +471,7 @@ function predsByVenue(r){
  const raced=c=>r.races.filter(x=>x.course===c),last=c=>raced(c).map(x=>x.date).sort().pop()||'';
  const venues=[...v.keys()].sort((a,b)=>last(b).localeCompare(last(a))||courseShort(a).localeCompare(courseShort(b)));
  const block=c=>{const n=raced(c).length;return `<li class="grp"><h4>${esc(courseShort(c))}</h4><span class="lm">${n?`${n} race${n>1?'s':''}, last ${fdate(last(c))}`:'Not raced yet'}</span></li>`+
-  v.get(c).sort((a,b)=>a.dist-b.dist).map(p=>`<li><span class="ln">${distLabel(p.dist)}</span><span class="lm">${p.pr?`Course best ${fmt(p.pr)}${pctTxt(p.p_pr)}`:'No course best yet'}</span><span class="lt">${fmt(p.pred)}<small>${fmt(p.lo)} to ${fmt(p.hi)}</small></span></li>`).join('')};
+  v.get(c).sort((a,b)=>a.dist-b.dist).map(p=>`<li><span class="ln">${distLabel(p.dist)}</span><span class="lm">${p.pr?`Course best ${fmtT(p.pr)}${pctTxt(p.p_pr)}`:'No course best yet'}</span><span class="lt">${fmt(p.pred)}<small>${fmt(p.lo)} to ${fmt(p.hi)}</small></span></li>`).join('')};
  const mine=venues.filter(c=>raced(c).length),other=venues.filter(c=>!raced(c).length);
  return `<ul class="list">${mine.map(block).join('')}</ul>`+
   (other.length?`<details class="more"><summary>Other courses (${other.length})</summary><ul class="list">${other.map(block).join('')}</ul></details>`:'');
@@ -480,7 +483,7 @@ function renderRunner(id){
  const pb=r.postBased,lastAny=pb?pb.last:past.date,stale=(new Date(D.meta.as_of)-new Date(lastAny))/864e5>200,ga=gradeAge(r);
  $('#runnerBody').innerHTML=`<h2>${esc(r.name)}</h2><p class="sub">${r.gender==='F'?'Girls':'Boys'}${ga.grade?', '+ga.grade:''}${ga.age?`, ${ga.grade?'':'age '}${ga.age}`:''}${ga.grade?'. Projected from the grade listed at past meets.':ga.age?'. Projected from the age listed at past meets.':''}</p>
  <div class="hero"><div class="big">${fmt(lv.pred)}</div><p class="cap">Expected 1.5 mi at ${REF} if raced today${pb?`, based on ${pb.n} race${pb.n>1?'s':''} since the Hawks for ${esc(pb.team)}, most recently ${esc(pb.meet)} on ${fdate(pb.last)}. Those courses are not rated yet, so this is a rougher estimate`:''}. 8 in 10 races should land between ${fmt(lv.lo)} and ${fmt(lv.hi)}.</p>
- ${strip(lv)}<div class="legend"><span><i class="swatch"></i>Likely range</span><span><i class="mk"></i>Expected</span>${lv.pr?`<span><i class="${lv.pr>=lv.lo&&lv.pr<=lv.hi?'mk dash':'dash-out'}"></i>Course best ${fmt(lv.pr)}</span>`:''}</div>
+ ${strip(lv)}<div class="legend"><span><i class="swatch"></i>Likely range</span><span><i class="mk"></i>Expected</span>${lv.pr?`<span><i class="${lv.pr>=lv.lo&&lv.pr<=lv.hi?'mk dash':'dash-out'}"></i>Course best ${fmtT(lv.pr)}</span>`:''}</div>
  ${stale?`<p class="note">Last race was ${fdate(lastAny)}. With a long gap the range widens, because kids this age improve at very different rates.</p>`:''}</div>
  ${r.active&&r.upcoming&&r.upcoming.length?`<h3>Upcoming meets</h3><ul class="list">${r.upcoming.map(upRow).join('')}</ul>
  ${r.active&&r.upcoming.some(u=>u.unsure||u.new_course)?`<p class="sub" style="margin-top:8px">${r.upcoming.some(u=>u.unsure)?'* Age group not certain from grade, so both possible races are shown. ':''}${r.upcoming.some(u=>u.new_course)?'† New course with no results yet, so the range is wider.':''}</p>`:''}`:''}
@@ -556,7 +559,7 @@ function renderCourses(){
  const parse=v=>{const m=String(v).trim().match(/^(\d+):(\d{1,2}(?:\.\d*)?)$/);return m&&+m[2]<60?+m[1]*60+ +m[2]:null};
  $('#courseBody').innerHTML=`<h2 style="margin-top:48px">Course ratings</h2>
  <p class="sub">How fast each course runs compared with ${REF} at 1.5 mi, after allowing for distance. Enter a ${REF} time to see what it is worth on every course, in mild weather.</p>
- <div class="bar"><label for="refT" class="sub" style="margin:0">${REF} 1.5 mi time</label><input id="refT" class="tin" inputmode="decimal" autocomplete="off" value="${fmt(med).replace(/\.0$/,'')}" aria-describedby="refHelp"><span id="refHelp" class="sub" style="margin:0">Minutes and seconds, like 10:30</span></div>
+ <div class="bar"><label for="refT" class="sub" style="margin:0">${REF} 1.5 mi time</label><input id="refT" class="tin" inputmode="decimal" autocomplete="off" value="${fmt(med)}" aria-describedby="refHelp"><span id="refHelp" class="sub" style="margin:0">Minutes and seconds, like 10:30</span></div>
  <div id="courseList"></div>`;
  const block=(o,T)=>{const n=o.meets.size,tp=temp(o);
   const head=`<li class="grp"><h4>${esc(courseShort(o.course))}</h4><span class="lm">${o.sched?o.sched.map(m=>`${m.up?'Next: ':''}${esc(m.meet)}, ${md(m.date)}. `).join(''):o.next?`Next: ${esc(o.next.meet)}, ${md(o.next.date)}. `:''}${n?`${n} meet${n>1?'s':''} and ${n0(o.fin)} finishes in the data, last ${fdate(o.last)}${tp!=null?`. Typical start ${tp}&deg;F`:''}.`:o.dists.length?'Rated from results not shown here.':'First visit for the Hawks.'}</span></li>`;
