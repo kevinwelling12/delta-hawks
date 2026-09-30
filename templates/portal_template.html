@@ -235,6 +235,7 @@ input.tin[aria-invalid="true"]{border-color:#B3261E;box-shadow:inset 0 0 0 1px #
  <h2>Meet results</h2>
  <div class="bar"><select id="raceSel" aria-label="Race"></select>
   <button class="chip" id="hawksOnly" aria-pressed="false">Hawks only</button></div>
+ <div id="raceFx" style="margin-bottom:12px"></div>
  <p class="sub" id="raceNote"></p>
  <div class="scroll"><table id="raceTable"></table></div>
 </section>
@@ -459,7 +460,7 @@ function drawProg(){
 let progW=0;window.addEventListener('resize',()=>{const el=document.getElementById('prog');if(el&&el.clientWidth!==progW){progW=el.clientWidth;drawProg()}});
 const md=d=>fdate(d).replace(/,\s\d{4}$/,'');
 const pctTxt=p=>p==null?'':p>=.995?', a new best is near certain':`, ${Math.max(1,Math.round(p*100))}% chance of a new one`;
-// ---- what moved a time: weather, course and the day for a race; weather, course and growth for an upcoming meet.
+// ---- what moved a time: course, weather and the day for a race; course, weather and growth for an upcoming meet.
 // Built only from numbers already here (course ratings, meet temperatures, the heat and distance settings, and each
 // race's 1.5 mi equivalent). The day is whatever course, distance and weather don't explain. A race whose numbers
 // don't add up, or whose distance can't be read, shows no tiles.
@@ -475,12 +476,20 @@ const courseF=(c,d)=>{if(!CF){CF=new Map();const R=D.meta.riegel;D.runners.forEa
 const heatF=T=>T==null?1:1+Math.max(0,T-60)/10*D.meta.heat_per_10F;
 const pctW=f=>Math.abs(Math.round((f-1)*1000)/10);
 const courseNote=(c,f)=>c===D.meta.ref_course?'reference':pctW(f)<.5?'same as '+esc(REF):`${pctW(f)}% ${f>1?'slower':'faster'}`;
-function fxRace(x){
+// a race's factors: course (at its distance), weather and the day; the day is the same for everyone in that race
+function raceF(x){
  const s=clockSecs(x.time),e=x.equiv_day,d=raceDist(x);if(!s||!(e>0)||!d)return null;
  const c=courseF(x.course,d),T=D.meta.meet_temps[x.date+'|'+x.meet],h=heatF(T);if(!c)return null;
  const day=s/(e*Math.pow(d/1.5,D.meta.riegel)*c*h);if(!(day>.85&&day<1.15))return null;
- const t1=s/h,t2=t1/c;
- return [['Weather',s-t1,T==null?'not recorded':T+'°F'],['Course',t1-t2,courseNote(x.course,c)],['The day',t2-t2/day,`field ${pctW(day)<.5?'normal':pctW(day)+'% '+(day>1?'slow':'fast')}`]]}
+ return {c,h,day,T,course:x.course}}
+const raceTiles=(f,s)=>{const t1=s/f.c,t2=t1/f.h;   // course, then weather, then the day, each taken off the time in turn
+ return [['Course',s-t1,courseNote(f.course,f.c)],['Weather',t1-t2,f.T==null?'not recorded':f.T+'°F'],['The day',t2-t2/f.day,`field ${pctW(f.day)<.5?'normal':pctW(f.day)+'% '+(f.day>1?'slow':'fast')}`]]};
+function fxRace(x){const f=raceF(x);return f&&raceTiles(f,clockSecs(x.time))}
+// the same tiles for a whole race on the meet results page, in seconds for the race's middle finisher
+function fxMeet(k,rows){
+ let f=null;for(const r of D.runners){for(const x of r.races)if(x.date+'|'+x.meet+'|'+x.race===k&&(f=raceF(x)))break;if(f)break}
+ const t=rows.map(r=>clockSecs(r.time)).filter(v=>v>0).sort((a,b)=>a-b);if(!f||!t.length)return null;
+ const mid=t[t.length>>1];return {tiles:raceTiles(f,mid),mid}}
 function fxNext(r,u){
  const lv=r.preds.find(p=>p.course===D.meta.ref_course&&Math.abs(p.dist-1.5)<.01),d=raceDist(u);if(!lv||!d||!(u.pred>0))return null;
  const m=sched.find(x=>x.date===u.date&&x.meet===u.meet),T=m&&m.temp?m.temp.f:null,h=heatF(T),base=lv.pred*Math.pow(d/1.5,D.meta.riegel);
@@ -490,7 +499,7 @@ function fxNext(r,u){
  else{g=1-D.meta.growth_per_year*days/365;c=u.pred/(base*h*g);if(!(c>.8&&c<1.25))return null}
  const t1=base*c,t2=t1*h;
  const gr=t2*g-t2,dd=Math.round(days);   // under 1.5 s faster (or a hair slower) is noise this close to meet day: read it as Steady
- return [['Weather',t2-t1,T==null?'no forecast yet':`${m.temp.kind==='forecast'?'forecast':'usual'} ${T}°F`],['Course',t1-base,u.new_course?'typical, new course':courseNote(u.course,c)],
+ return [['Course',t1-base,u.new_course?'typical, new course':courseNote(u.course,c)],['Weather',t2-t1,T==null?'no forecast yet':`${m.temp.kind==='forecast'?'forecast':'usual'} ${T}°F`],
   gr>-1.5?['Growth','Steady',`little change in ${dd} days`]:['Growth',gr,`${dd} days`]]}
 const fxTiles=f=>{if(!f)return'';const n=v=>{if(typeof v==='string')return v;const k=Math.round(v);return k===0?'0 s':(k>0?'+':'−')+Math.abs(k)+' s'};
  return `<span class="fx" aria-label="What moved this time, in seconds (plus is slower)">${f.map(([l,v,note])=>`<span>${l}<b>${n(v)}</b><small>${note}</small></span>`).join('')}</span>`};
@@ -533,7 +542,7 @@ function renderRunner(id){
  <p class="sub" style="margin-top:8px">Tiles: seconds each factor adds (+) or saves (−) against a mild day at ${REF}, starting from today's rating. Steady: under 2 s of growth expected by meet day.</p>
  ${r.active&&r.upcoming.some(u=>u.unsure||u.new_course)?`<p class="sub" style="margin-top:8px">${r.upcoming.some(u=>u.unsure)?'* Age group not certain from grade, so both possible races are shown. ':''}${r.upcoming.some(u=>u.new_course)?'† New course with no results yet, so the range is wider.':''}</p>`:''}`:''}
  <h3>Race history</h3>${histList(r)}
- <p class="sub" style="margin-top:10px">The 1.5 mi equivalent converts each race to a 1.5 mi ${REF} time as of race day, so races on different courses and distances line up. The tiles show how many seconds the weather, the course and the day added (+) or took off (−).</p>
+ <p class="sub" style="margin-top:10px">The 1.5 mi equivalent converts each race to a 1.5 mi ${REF} time as of race day, so races on different courses and distances line up. The tiles show how many seconds the course, the weather and the day added (+) or took off (−).</p>
  <p class="sub fnote"><abbr class="prb">PB</abbr>Personal best: the race with the fastest 1.5 mi equivalent, not the fastest clock time. Each finish is converted to a 1.5 mi ${REF} time using that race's own difficulty rating (course, distance and the day's conditions), so a quick time on an easy course or a short race does not count for more than it should. <abbr class="prb old">PB</abbr>A personal best when it was run, since beaten. Ratings are refit as new results come in, so an older race's equivalent can shift slightly.</p>
  <h3>Progression</h3>${chart(r)}
  ${(al=>al?`<h3>Since the Hawks</h3><p class="sub">Now ${esc(al.team)}. ${al.n} races for schools and other clubs after their last Hawks race on ${fdate(al.hawk_last)}, from their athletic.net profile. Used for the rough expected time above, but not in course ratings or the backtest.</p>${alumTiles(al)}${alumTable(al)}`:'')(AL.find(a=>a.name.toLowerCase()===r.name.toLowerCase()))}
@@ -548,6 +557,7 @@ let hawksOnly=false;
 function renderRace(){
  const k=$('#raceSel').value,rows=D.results.filter(r=>r.date+'|'+r.meet+'|'+r.race===k),h=rows.filter(r=>r.hawk);
  const full=rows[0]&&rows[0].full==='Y';
+ $('#raceFx').innerHTML=(()=>{try{const m=fxMeet(k,rows);return m?fxTiles(m.tiles)+`<p class="sub" style="margin:6px 0 0">Seconds each factor added (+) or took off (−) for a ${fmt(m.mid)} finish, the middle of the results shown.</p>`:''}catch(e){return''}})();
  $('#raceNote').textContent=`${fdate(rows[0].date)}. ${rows[0].field} finishers, ${h.length} Hawks.`+(full?'':' Only part of the field is stored for this race (Hawks, or youth finishers in a road race).');
  const show=hawksOnly?h:rows;
  $('#raceTable').innerHTML='<tr><th class="n">Pl</th><th>Name</th><th>Yr</th><th class="lg">Team</th><th class="n">Time</th></tr>'+show.map(r=>`<tr class="${r.hawk?'hawk':''}"><td class="n">${r.place}</td><td class="w">${esc(r.name)}<span class="rm sm">${esc(r.team)}</span></td><td>${esc(r.yr)}</td><td class="lg">${esc(r.team)}</td><td class="n">${esc(r.time)}</td></tr>`).join('');
