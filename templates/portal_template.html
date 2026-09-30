@@ -183,27 +183,12 @@ sup.fn{font-size:.7em;color:var(--muted);margin-left:1px;font-weight:700}.fnote{
 .list li.grp{background:var(--panel);padding-top:10px;padding-bottom:10px}
 .list li.grp h4{margin:0;font:700 18px/1.2 var(--cond);letter-spacing:.01em}
 details.more .list{margin-top:4px}
-/* factor breakdown under a race or an upcoming meet */
-.why{border:0;background:none;padding:0;margin-left:2px;font:600 13px/1.4 var(--body);color:var(--ink);text-decoration:underline;text-decoration-color:var(--mark);text-decoration-thickness:2px;text-underline-offset:3px;cursor:pointer}
-.list li.bd{display:flex;flex-direction:column;align-items:stretch;gap:10px;background:var(--panel);border-top:0;padding-top:14px;padding-bottom:16px}
-.bd p{margin:0;font-size:14px;max-width:62ch}
-.bd .st{display:grid;grid-template-columns:minmax(0,1fr) 76px;column-gap:10px;row-gap:2px;align-items:center}
-.bd .sl{display:flex;justify-content:space-between;gap:8px;font-weight:650;font-size:14px}
-.bd .sl em{font-style:normal;white-space:nowrap;font-variant-numeric:tabular-nums}
-.bd .sd{grid-column:1;color:var(--muted);font-size:13px}
-.bd .sv{grid-column:2;grid-row:1/span 3;text-align:right;font:700 20px/1 var(--cond);font-variant-numeric:tabular-nums}
-.bd .tr{grid-column:1;position:relative;height:18px}
-.bd .tr i{position:absolute;top:0;height:18px;border-radius:3px}
-.bd .tr i.b0{background:var(--ctl)}.bd .tr i.lose{background:var(--delta)}.bd .tr i.gain{background:var(--hawk);box-shadow:inset 0 0 0 1.5px var(--ink)}
-.bd .tr i.end{background:var(--hawk);box-shadow:inset 0 0 0 2px var(--ink)}
-.bd .tr s{position:absolute;top:-3px;bottom:-3px;border-left:1.5px dashed var(--muted)}
-.bd .tr b{position:absolute;top:0;height:18px;background:var(--hawk);border-radius:3px;box-shadow:inset 0 0 0 1.5px var(--ink)}
-.bd .tr u{position:absolute;top:-3px;width:3px;height:24px;margin-left:-1.5px;background:var(--ink)}
-.bd .ax{position:relative;height:14px;margin-right:86px;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
-.bd .ax span{position:absolute;transform:translateX(-50%);white-space:nowrap}
-.bd .key{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--muted)}
-.bd .key i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:5px;vertical-align:-1px}
-.bd .fnote{font-size:13px;color:var(--muted)}
+/* what moved a time: three small tiles under a race or an upcoming meet, in seconds (+ slower, − faster) */
+.list li>.fx{grid-column:1/-1}
+.fx{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:6px;max-width:420px}
+.fx span{display:flex;flex-direction:column;min-width:0;padding:5px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel);font-size:12px;line-height:1.25;color:var(--muted)}
+.fx b{font:700 18px/1.1 var(--cond);color:var(--ink);font-variant-numeric:tabular-nums}
+.fx small{font-size:11px}
 @media (min-width:720px){.list{margin-left:0;margin-right:0}.list li{padding-left:8px;padding-right:8px}}
 @media (max-width:420px){.list .lt{font-size:26px}}
 .prb{display:inline-block;vertical-align:.3em;margin-right:8px;padding:3px 6px 2px;border-radius:4px;background:var(--sel-bg);color:var(--sel-fg);font:700 14px/1 var(--cond);letter-spacing:.06em;text-decoration:none}
@@ -472,11 +457,10 @@ function drawProg(){
 let progW=0;window.addEventListener('resize',()=>{const el=document.getElementById('prog');if(el&&el.clientWidth!==progW){progW=el.clientWidth;drawProg()}});
 const md=d=>fdate(d).replace(/,\s\d{4}$/,'');
 const pctTxt=p=>p==null?'':p>=.995?', a new best is near certain':`, ${Math.max(1,Math.round(p*100))}% chance of a new one`;
-// ---- factor breakdown: "Why this time?" on a race, "How we got this" on an upcoming meet.
+// ---- what moved a time: weather, course and the day for a race; weather, course and growth for an upcoming meet.
 // Built only from numbers already here (course ratings, meet temperatures, the heat and distance settings, and each
-// race's 1.5 mi equivalent). Whatever course, distance and heat don't explain is the day itself. A race whose numbers
-// don't add up, or whose distance can't be read, gets no button.
-let BD=[];
+// race's 1.5 mi equivalent). The day is whatever course, distance and weather don't explain. A race whose numbers
+// don't add up, or whose distance can't be read, shows no tiles.
 const clockSecs=t=>{const m=String(t||'').trim().match(/^(?:(\d+):)?(\d+(?:\.\d+)?)$/);return m?(+(m[1]||0))*60+(+m[2]):null};
 const raceDist=x=>{if(x.dist>0)return x.dist;const s=String(x.race||'');let m;
  if((m=s.match(/(\d+(?:\.\d+)?)\s*(?:mi\b|mile)/i)))return +m[1];
@@ -488,67 +472,35 @@ const courseF=(c,d)=>{if(!CF){CF=new Map();const R=D.meta.riegel;D.runners.forEa
  for(const [k,f] of CF){const [cc,dd]=k.split('|');if(cc===c&&Math.abs(dd-d)<.02)return f}return null};
 const heatF=T=>T==null?1:1+Math.max(0,T-60)/10*D.meta.heat_per_10F;
 const pctW=f=>Math.abs(Math.round((f-1)*1000)/10);
-const courseTxt=(c,f)=>c===D.meta.ref_course?'the reference course':pctW(f)<.5?`${esc(courseShort(c))} is rated the same as ${esc(REF)}`:`${esc(courseShort(c))} runs ${pctW(f)}% ${f>1?'slower':'faster'} than ${esc(REF)}`;
-function bdRace(r,x){
+const courseNote=(c,f)=>c===D.meta.ref_course?'reference':pctW(f)<.5?'same as '+esc(REF):`${pctW(f)}% ${f>1?'slower':'faster'}`;
+function fxRace(x){
  const s=clockSecs(x.time),e=x.equiv_day,d=raceDist(x);if(!s||!(e>0)||!d)return null;
- const c=courseF(x.course,d),T=D.meta.meet_temps[x.date+'|'+x.meet],h=heatF(T),dm=Math.pow(d/1.5,D.meta.riegel);if(!c)return null;
- const day=s/(e*dm*c*h);if(!(day>.85&&day<1.15))return null;
- const t1=s/h,t2=t1/c,t3=t2/day;
- return {lead:`The clock said <b>${esc(x.time)}</b>. On a normal, mild day at ${esc(REF)} this was a <b>${fmt(t3)}</b> ${esc(distLabel(d))}, which is a <b>${fmt(e)}</b> 1.5 mi.`,
-  start:{l:'Clock time',d:'as recorded',v:s,show:esc(x.time)},
-  steps:[{l:'Heat',d:T==null?'start temperature not recorded':T>60?`${T}°F at the start, ${T-60}° over 60°F`:`${T}°F at the start, no heat cost`,a:s,b:t1},
-   {l:'Course',d:courseTxt(x.course,c)+` at ${esc(distLabel(d))}`,a:t1,b:t2},
-   {l:'The day',d:`the whole field ran ${pctW(day)}% ${day>1?'slow':'fast'} (wind, footing, pace)`,a:t2,b:t3}],
-  end:{l:`Normal day at ${esc(REF)}`,d:`${esc(distLabel(d))}, the runner's own time`,v:t3},
-  note:`Scaled to 1.5 mi with the distance rule (× (1.5 / ${+d.toFixed(2)})^${D.meta.riegel}), that is the ${fmt(e)} 1.5 mi equivalent shown on the race.`,past:true}}
-function bdNext(r,u){
+ const c=courseF(x.course,d),T=D.meta.meet_temps[x.date+'|'+x.meet],h=heatF(T);if(!c)return null;
+ const day=s/(e*Math.pow(d/1.5,D.meta.riegel)*c*h);if(!(day>.85&&day<1.15))return null;
+ const t1=s/h,t2=t1/c;
+ return [['Weather',s-t1,T==null?'not recorded':T+'°F'],['Course',t1-t2,courseNote(x.course,c)],['The day',t2-t2/day,`field ${pctW(day)<.5?'normal':pctW(day)+'% '+(day>1?'slow':'fast')}`]]}
+function fxNext(r,u){
  const lv=r.preds.find(p=>p.course===D.meta.ref_course&&Math.abs(p.dist-1.5)<.01),d=raceDist(u);if(!lv||!d||!(u.pred>0))return null;
- const m=sched.find(x=>x.date===u.date&&x.meet===u.meet),T=m&&m.temp?m.temp.f:null,h=heatF(T),dm=Math.pow(d/1.5,D.meta.riegel);
- const days=Math.max(0,(new Date(u.date)-new Date(D.meta.as_of))/864e5),base=lv.pred*dm;
+ const m=sched.find(x=>x.date===u.date&&x.meet===u.meet),T=m&&m.temp?m.temp.f:null,h=heatF(T),base=lv.pred*Math.pow(d/1.5,D.meta.riegel);
+ const days=Math.max(0,(new Date(u.date)-new Date(D.meta.as_of))/864e5);
  let c=u.new_course?null:courseF(u.course,d),g;
  if(c){g=u.pred/(base*c*h);if(!(g>.9&&g<1.02))return null}   // growth to meet day is what's left
  else{g=1-D.meta.growth_per_year*days/365;c=u.pred/(base*h*g);if(!(c>.8&&c<1.25))return null}
- const t1=base*c,t2=t1*h,t3=t2*g,where=courseShort(u.course);
- return {lead:`Starting from today's <b>${fmt(lv.pred)}</b> for 1.5 mi at ${esc(REF)}, the model adds each factor for ${md(u.date)}. Expected <b>${fmt(u.pred)}</b>, and 8 in 10 races land between <b>${fmt(u.lo)}</b> and <b>${fmt(u.hi)}</b>.`,
-  start:{l:`${esc(distLabel(d))} at ${esc(REF)}, today`,d:`${fmt(lv.pred)} × (${+d.toFixed(2)} / 1.5)^${D.meta.riegel}`,v:base},
-  steps:[{l:'Course',d:u.new_course?`no results at ${esc(where)} yet, so the typical effect for this distance`:courseTxt(u.course,c),a:base,b:t1},
-   {l:'Heat',d:T==null?'no temperature yet':`${m.temp.kind==='forecast'?'forecast':'typical'} ${T}°F at the start`,a:t1,b:t2},
-   {l:'Growth',d:`${Math.round(days)} more days of improvement`,a:t2,b:t3}],
-  end:{l:`Expected on ${md(u.date)}`,d:'before race-day luck',v:t3},range:u,
-  note:'How fast the whole field runs on the day is unknown in advance, so it widens the range instead of moving the expected time.'}}
-function bdHTML(v){
- const all=[v.start.v,v.end.v,...v.steps.flatMap(s=>[s.a,s.b])].concat(v.range?[v.range.lo,v.range.hi]:[]);
- let lo=Math.min(...all),hi=Math.max(...all);const pad=(hi-lo)*.08||5;lo-=pad;hi+=pad;
- const X=t=>((t-lo)/(hi-lo)*100).toFixed(2)+'%',W=(a,b)=>(Math.abs(b-a)/(hi-lo)*100).toFixed(2)+'%';
- const st=(l,amt,d,bar,val)=>`<div class="st"><div class="sl"><span>${l}</span>${amt?`<em>${amt}</em>`:''}</div><div class="tr">${bar}</div><div class="sd">${d}</div><div class="sv">${val}</div></div>`;
- let h=`<p>${v.lead}</p>`+st(v.start.l,'',v.start.d,`<i class="b0" style="left:0;width:${X(v.start.v)}"></i>`,v.start.show||fmt(v.start.v));
- v.steps.forEach(s=>{const n=Math.round(Math.abs(s.b-s.a)),slow=v.past?s.b<s.a:s.b>s.a;   // on a past race, removing a cost makes the time drop
-  const amt=n===0?'no effect':v.past?(slow?`cost ${n} s`:`helped ${n} s`):(slow?`adds ${n} s`:`saves ${n} s`);
-  h+=st(s.l,amt,s.d,`<s style="left:${X(s.a)}"></s><i class="${slow?'lose':'gain'}" style="left:${X(Math.min(s.a,s.b))};width:${W(s.a,s.b)}"></i>`,fmt(s.b))});
- h+=st(v.end.l,'',v.end.d,`<i class="end" style="left:0;width:${X(v.end.v)}"></i>`,fmt(v.end.v));
- if(v.range){const u=v.range;h+=st('Likely range',`${fmt(u.lo)} to ${fmt(u.hi)}`,`8 in 10 races land in this band${u.pr?`. Dashed line: course best ${fmtT(u.pr)}`:''}`,
-  `<b style="left:${X(u.lo)};width:${W(u.lo,u.hi)}"></b><u style="left:${X(u.pred)}"></u>${u.pr&&u.pr>lo&&u.pr<hi?`<s style="left:${X(u.pr)}"></s>`:''}`,fmt(u.pred))}
- const step=hi-lo>90?30:15,ticks=[];for(let t=Math.ceil(lo/step)*step;t<=hi;t+=step)ticks.push(`<span style="left:${X(t)}">${fmt(t)}</span>`);
- h+=`<div class="ax" aria-hidden="true">${ticks.join('')}</div>`;
- h+=`<div class="key">${v.past?'<span><i style="background:var(--delta)"></i>Time lost</span><span><i style="background:var(--hawk);box-shadow:inset 0 0 0 1.5px var(--ink)"></i>Time gained</span>'
-  :'<span><i style="background:var(--delta)"></i>Adds time</span><span><i style="background:var(--hawk);box-shadow:inset 0 0 0 1.5px var(--ink)"></i>Saves time</span>'}<span>Bars start near the fastest time, so small effects show</span></div>`;
- return h+`<p class="fnote">${v.note}</p>`}
-const bdBtn=(v,label)=>{if(!v)return'';BD.push(v);return ` <button class="why" type="button" data-bd="${BD.length-1}" aria-expanded="false">${label}</button>`};
-const bdTry=f=>{try{return f()}catch(e){return null}};   // a breakdown that can't be built never stops the page
-function bdWire(root){root.querySelectorAll('[data-bd]').forEach(b=>b.onclick=()=>{
- const li=b.closest('li'),open=li.nextElementSibling&&li.nextElementSibling.classList.contains('bd');
- if(open){li.nextElementSibling.remove();b.setAttribute('aria-expanded','false');return}
- const p=document.createElement('li');p.className='bd';p.innerHTML=bdHTML(BD[+b.dataset.bd]);li.after(p);b.setAttribute('aria-expanded','true')})}
-function upRow(u,r){return `<li><span class="ln">${esc(u.meet)}</span><span class="lm">${md(u.date)}, ${esc(u.race)}${u.unsure?' *':''}${u.new_course?' †':''}${r?bdBtn(bdTry(()=>bdNext(r,u)),'How we got this'):''}</span>
+ const t1=base*c,t2=t1*h;
+ return [['Weather',t2-t1,T==null?'no forecast yet':`${m.temp.kind==='forecast'?'forecast':'usual'} ${T}°F`],['Course',t1-base,u.new_course?'typical, new course':courseNote(u.course,c)],['Growth',t2*g-t2,`${Math.round(days)} days`]]}
+const fxTiles=f=>{if(!f)return'';const n=v=>{const k=Math.round(v);return k===0?'0 s':(k>0?'+':'−')+Math.abs(k)+' s'};
+ return `<span class="fx" aria-label="What moved this time, in seconds (plus is slower)">${f.map(([l,v,note])=>`<span>${l}<b>${n(v)}</b><small>${note}</small></span>`).join('')}</span>`};
+const fxTry=f=>{try{return fxTiles(f())}catch(e){return''}};   // tiles that can't be built never stop the page
+function upRow(u,r){return `<li><span class="ln">${esc(u.meet)}</span><span class="lm">${md(u.date)}, ${esc(u.race)}${u.unsure?' *':''}${u.new_course?' †':''}</span>
  <span class="lm">${u.place?`About ${nth(u.place)} of ${u.field}. `:''}${u.pr?`Course best ${fmtT(u.pr)}${pctTxt(u.p_pr)}`:'First race at this course and distance'}</span>
- <span class="lt">${fmt(u.pred)}<small>${fmt(u.lo)} to ${fmt(u.hi)}</small></span></li>`}
+ ${r?fxTry(()=>fxNext(r,u)):''}<span class="lt">${fmt(u.pred)}<small>${fmt(u.lo)} to ${fmt(u.hi)}</small></span></li>`}
 function histList(r){
  const team=x=>x.team&&x.team!=='Delta Hawks'&&x.team!=='Unattached'?`, for ${esc(x.team)}`:'';
  // PB: fastest 1.5 mi equivalent so far; a faded PB was the best when it was run and has since been beaten
  const pbs=new Set();let run=null;r.races.slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(x=>{if(x.equiv_day>0&&(!run||x.equiv_day<run.equiv_day)){run=x;pbs.add(x)}});
  const badge=x=>!pbs.has(x)?'':x===run?'<abbr class="prb" title="Personal best: fastest 1.5 mi equivalent">PB</abbr>':'<abbr class="prb old" title="Personal best when it was run, since beaten">PB</abbr>';
- const row=x=>{const t=D.meta.meet_temps[x.date+'|'+x.meet];return `<li><span class="ln">${esc(x.meet)}</span><span class="lm">${fdate(x.date)}, ${esc(x.race)}${team(x)}${bdBtn(bdTry(()=>bdRace(r,x)),'Why this time?')}</span>
- <span class="lm">Top ${Math.max(1,Math.round(100-x.pct+1))}%${t!=null?`, ${t}°F`:''}. 1.5 mi equivalent ${fmt(x.equiv_day)}</span>
+ const row=x=>{const t=D.meta.meet_temps[x.date+'|'+x.meet];return `<li><span class="ln">${esc(x.meet)}</span><span class="lm">${fdate(x.date)}, ${esc(x.race)}${team(x)}</span>
+ <span class="lm">Top ${Math.max(1,Math.round(100-x.pct+1))}%${t!=null?`, ${t}°F`:''}. 1.5 mi equivalent ${fmt(x.equiv_day)}</span>${fxTry(()=>fxRace(x))}
  <span class="lt">${badge(x)}${esc(x.time)}<small>${nth(+x.place)} of ${x.field}</small></span></li>`};
  const all=r.races.slice().reverse(),N=8;
  return `<ul class="list">${all.slice(0,N).map(row).join('')}</ul>`+(all.length>N?`<details class="more"><summary>${all.length-N} earlier race${all.length-N>1?'s':''}</summary><ul class="list">${all.slice(N).map(row).join('')}</ul></details>`:'');
@@ -565,7 +517,7 @@ function predsByVenue(r){
   (other.length?`<details class="more"><summary>Other courses (${other.length})</summary><ul class="list">${other.map(block).join('')}</ul></details>`:'');
 }
 function renderRunner(id){
- const r=D.runners.find(x=>x.id===id);if(!r)return;BD=[];
+ const r=D.runners.find(x=>x.id===id);if(!r)return;
  const lv=r.preds.find(p=>p.course===D.meta.ref_course&&Math.abs(p.dist-1.5)<.01);
  const past=r.races[r.races.length-1];
  const pb=r.postBased,lastAny=pb?pb.last:past.date,stale=(new Date(D.meta.as_of)-new Date(lastAny))/864e5>200,ga=gradeAge(r);
@@ -574,14 +526,15 @@ function renderRunner(id){
  ${strip(lv)}<div class="legend"><span><i class="swatch"></i>Likely range</span><span><i class="mk"></i>Expected</span>${lv.pr?`<span><i class="${lv.pr>=lv.lo&&lv.pr<=lv.hi?'mk dash':'dash-out'}"></i>Course best ${fmtT(lv.pr)}</span>`:''}</div>
  ${stale?`<p class="note">Last race was ${fdate(lastAny)}. With a long gap the range widens, because kids this age improve at very different rates.</p>`:''}</div>
  ${r.active&&r.upcoming&&r.upcoming.length?`<h3>Upcoming meets</h3><ul class="list">${r.upcoming.map(u=>upRow(u,r)).join('')}</ul>
+ <p class="sub" style="margin-top:8px">Tiles: seconds each factor adds (+) or saves (−) against a mild day at ${REF}, starting from today's rating.</p>
  ${r.active&&r.upcoming.some(u=>u.unsure||u.new_course)?`<p class="sub" style="margin-top:8px">${r.upcoming.some(u=>u.unsure)?'* Age group not certain from grade, so both possible races are shown. ':''}${r.upcoming.some(u=>u.new_course)?'† New course with no results yet, so the range is wider.':''}</p>`:''}`:''}
  <h3>Progression</h3>${chart(r)}
  <h3>Predictions by course</h3><p class="sub" style="margin:0 0 6px">If raced today in mild weather (60°F or cooler).</p>${predsByVenue(r)}
  <h3>Race history</h3>${histList(r)}
- <p class="sub" style="margin-top:10px">The 1.5 mi equivalent converts each race to a 1.5 mi ${REF} time as of race day, so races on different courses and distances line up.</p>
+ <p class="sub" style="margin-top:10px">The 1.5 mi equivalent converts each race to a 1.5 mi ${REF} time as of race day, so races on different courses and distances line up. The tiles show how many seconds the weather, the course and the day added (+) or took off (−).</p>
  <p class="sub fnote"><abbr class="prb">PB</abbr>Personal best: the race with the fastest 1.5 mi equivalent, not the fastest clock time. Each finish is converted to a 1.5 mi ${REF} time using that race's own difficulty rating (course, distance and the day's conditions), so a quick time on an easy course or a short race does not count for more than it should. <abbr class="prb old">PB</abbr>A personal best when it was run, since beaten. Ratings are refit as new results come in, so an older race's equivalent can shift slightly.</p>
  ${(al=>al?`<h3>Since the Hawks</h3><p class="sub">Now ${esc(al.team)}. ${al.n} races for schools and other clubs after their last Hawks race on ${fdate(al.hawk_last)}, from their athletic.net profile. Used for the rough expected time above, but not in course ratings or the backtest.</p>${alumTiles(al)}${alumTable(al)}`:'')(AL.find(a=>a.name.toLowerCase()===r.name.toLowerCase()))}`;
- drawProg();bdWire($('#runnerBody'));
+ drawProg();
 }
 
 // meets
