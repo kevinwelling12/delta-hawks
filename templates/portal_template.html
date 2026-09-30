@@ -183,6 +183,8 @@ sup.fn{font-size:.7em;color:var(--muted);margin-left:1px;font-weight:700}.fnote{
 .list li.grp{background:var(--panel);padding-top:10px;padding-bottom:10px}
 .list li.grp h4{margin:0;font:700 18px/1.2 var(--cond);letter-spacing:.01em}
 details.more .list{margin-top:4px}
+details.deep{margin-top:40px}
+details.deep>summary{font:700 22px/1.15 var(--cond);letter-spacing:.01em}
 /* what moved a time: three small tiles under a race or an upcoming meet, in seconds (+ slower, − faster) */
 .list li>.fx{grid-column:1/-1}
 .fx{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:6px;max-width:420px}
@@ -528,12 +530,12 @@ function renderRunner(id){
  ${r.active&&r.upcoming&&r.upcoming.length?`<h3>Upcoming meets</h3><ul class="list">${r.upcoming.map(u=>upRow(u,r)).join('')}</ul>
  <p class="sub" style="margin-top:8px">Tiles: seconds each factor adds (+) or saves (−) against a mild day at ${REF}, starting from today's rating.</p>
  ${r.active&&r.upcoming.some(u=>u.unsure||u.new_course)?`<p class="sub" style="margin-top:8px">${r.upcoming.some(u=>u.unsure)?'* Age group not certain from grade, so both possible races are shown. ':''}${r.upcoming.some(u=>u.new_course)?'† New course with no results yet, so the range is wider.':''}</p>`:''}`:''}
- <h3>Progression</h3>${chart(r)}
- <h3>Predictions by course</h3><p class="sub" style="margin:0 0 6px">If raced today in mild weather (60°F or cooler).</p>${predsByVenue(r)}
  <h3>Race history</h3>${histList(r)}
  <p class="sub" style="margin-top:10px">The 1.5 mi equivalent converts each race to a 1.5 mi ${REF} time as of race day, so races on different courses and distances line up. The tiles show how many seconds the weather, the course and the day added (+) or took off (−).</p>
  <p class="sub fnote"><abbr class="prb">PB</abbr>Personal best: the race with the fastest 1.5 mi equivalent, not the fastest clock time. Each finish is converted to a 1.5 mi ${REF} time using that race's own difficulty rating (course, distance and the day's conditions), so a quick time on an easy course or a short race does not count for more than it should. <abbr class="prb old">PB</abbr>A personal best when it was run, since beaten. Ratings are refit as new results come in, so an older race's equivalent can shift slightly.</p>
- ${(al=>al?`<h3>Since the Hawks</h3><p class="sub">Now ${esc(al.team)}. ${al.n} races for schools and other clubs after their last Hawks race on ${fdate(al.hawk_last)}, from their athletic.net profile. Used for the rough expected time above, but not in course ratings or the backtest.</p>${alumTiles(al)}${alumTable(al)}`:'')(AL.find(a=>a.name.toLowerCase()===r.name.toLowerCase()))}`;
+ <h3>Progression</h3>${chart(r)}
+ ${(al=>al?`<h3>Since the Hawks</h3><p class="sub">Now ${esc(al.team)}. ${al.n} races for schools and other clubs after their last Hawks race on ${fdate(al.hawk_last)}, from their athletic.net profile. Used for the rough expected time above, but not in course ratings or the backtest.</p>${alumTiles(al)}${alumTable(al)}`:'')(AL.find(a=>a.name.toLowerCase()===r.name.toLowerCase()))}
+ <details class="more deep"><summary>Predictions by course</summary><p class="sub" style="margin:8px 0 6px">If raced today in mild weather (60°F or cooler).</p>${predsByVenue(r)}</details>`;
  drawProg();
 }
 
