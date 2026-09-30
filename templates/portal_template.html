@@ -489,8 +489,10 @@ function fxNext(r,u){
  if(c){g=u.pred/(base*c*h);if(!(g>.9&&g<1.02))return null}   // growth to meet day is what's left
  else{g=1-D.meta.growth_per_year*days/365;c=u.pred/(base*h*g);if(!(c>.8&&c<1.25))return null}
  const t1=base*c,t2=t1*h;
- return [['Weather',t2-t1,T==null?'no forecast yet':`${m.temp.kind==='forecast'?'forecast':'usual'} ${T}°F`],['Course',t1-base,u.new_course?'typical, new course':courseNote(u.course,c)],['Growth',t2*g-t2,`${Math.round(days)} days`]]}
-const fxTiles=f=>{if(!f)return'';const n=v=>{const k=Math.round(v);return k===0?'0 s':(k>0?'+':'−')+Math.abs(k)+' s'};
+ const gr=t2*g-t2,dd=Math.round(days);   // under 1.5 s faster (or a hair slower) is noise this close to meet day: read it as Steady
+ return [['Weather',t2-t1,T==null?'no forecast yet':`${m.temp.kind==='forecast'?'forecast':'usual'} ${T}°F`],['Course',t1-base,u.new_course?'typical, new course':courseNote(u.course,c)],
+  gr>-1.5?['Growth','Steady',`little change in ${dd} days`]:['Growth',gr,`${dd} days`]]}
+const fxTiles=f=>{if(!f)return'';const n=v=>{if(typeof v==='string')return v;const k=Math.round(v);return k===0?'0 s':(k>0?'+':'−')+Math.abs(k)+' s'};
  return `<span class="fx" aria-label="What moved this time, in seconds (plus is slower)">${f.map(([l,v,note])=>`<span>${l}<b>${n(v)}</b><small>${note}</small></span>`).join('')}</span>`};
 const fxTry=f=>{try{return fxTiles(f())}catch(e){return''}};   // tiles that can't be built never stop the page
 function upRow(u,r){return `<li><span class="ln">${esc(u.meet)}</span><span class="lm">${md(u.date)}, ${esc(u.race)}${u.unsure?' *':''}${u.new_course?' †':''}</span>
@@ -528,7 +530,7 @@ function renderRunner(id){
  ${strip(lv)}<div class="legend"><span><i class="swatch"></i>Likely range</span><span><i class="mk"></i>Expected</span>${lv.pr?`<span><i class="${lv.pr>=lv.lo&&lv.pr<=lv.hi?'mk dash':'dash-out'}"></i>Course best ${fmtT(lv.pr)}</span>`:''}</div>
  ${stale?`<p class="note">Last race was ${fdate(lastAny)}. With a long gap the range widens, because kids this age improve at very different rates.</p>`:''}</div>
  ${r.active&&r.upcoming&&r.upcoming.length?`<h3>Upcoming meets</h3><ul class="list">${r.upcoming.map(u=>upRow(u,r)).join('')}</ul>
- <p class="sub" style="margin-top:8px">Tiles: seconds each factor adds (+) or saves (−) against a mild day at ${REF}, starting from today's rating.</p>
+ <p class="sub" style="margin-top:8px">Tiles: seconds each factor adds (+) or saves (−) against a mild day at ${REF}, starting from today's rating. Steady: under 2 s of growth expected by meet day.</p>
  ${r.active&&r.upcoming.some(u=>u.unsure||u.new_course)?`<p class="sub" style="margin-top:8px">${r.upcoming.some(u=>u.unsure)?'* Age group not certain from grade, so both possible races are shown. ':''}${r.upcoming.some(u=>u.new_course)?'† New course with no results yet, so the range is wider.':''}</p>`:''}`:''}
  <h3>Race history</h3>${histList(r)}
  <p class="sub" style="margin-top:10px">The 1.5 mi equivalent converts each race to a 1.5 mi ${REF} time as of race day, so races on different courses and distances line up. The tiles show how many seconds the weather, the course and the day added (+) or took off (−).</p>
