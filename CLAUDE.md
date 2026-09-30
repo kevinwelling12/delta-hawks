@@ -30,5 +30,9 @@ the sibling folder ../delta-hawks (private, not in git; read its CLAUDE.md for t
   the page reloads once. Pull to refresh exists only in the home screen web app (standalone).
   The footer shows a version stamp (build time Pacific + commit) to tell whether an update arrived;
   GitHub Pages sends max-age=600, so devices can hold a page for 10 minutes.
+- "This week" tab: build.py reads the latest practice schedule from the club blog (scripts/week_schedule.py: the
+  RSS feed for links, then the post page, since the feed is cut off) and adds the tab to both web portals. Nothing is
+  saved in the repo. pages.yml rebuilds every 3 hours so a new Sunday post appears on its own; if the blog can't be
+  read the pages build without the tab. `python3 build.py --no-schedule` skips it. Not in the claude.ai build.
 - Don't call db.settings() with long-polling options: this SDK auto-detects by default and throws if forced.
 - Kevin prefers plain, direct writing: no em dashes, no filler.

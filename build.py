@@ -46,12 +46,53 @@ def build(template, key, out):
     at = html.find('</head>') if '</head>' in html else html.find('<body')   # the track template has no </head>
     assert at > 0, template
     html = html[:at] + head + html[at:]
+    html = week_tab(html)
     html = re.sub(r'(<body[^>]*>)', lambda m: m.group(1) + '\n' + src('gate.html'), html, count=1)
     html = html.replace('</body>', '<script>' + src('gate.js') + '</script>\n</body>', 1)
     dest = root / 'dist' / out
     dest.parent.mkdir(exist_ok=True)
     dest.write_text(html)
     print(f'wrote dist/{out} ({len(html):,} bytes)')
+
+# "This week" tab: the practice schedule from the latest club blog post (scripts/week_schedule.py). The Pages workflow
+# rebuilds every few hours so a new post shows up on its own. If the blog can't be read, the pages build without the tab.
+def week_schedule():
+    if '--no-schedule' in sys.argv: return None
+    try:
+        sys.path.insert(0, str(root / 'scripts')); import week_schedule as ws
+        return ws.latest()
+    except Exception as e:
+        print(f'schedule: skipped ({e})'); return None
+WEEK = week_schedule()
+def week_tab(html):
+    if not WEEK: return html
+    from html import escape as e
+    wk = datetime.date.fromisoformat(WEEK['week_of'])
+    md = lambda d: d.strftime('%b %-d')
+    def when(t):
+        m = re.fullmatch(r'(\d{1,2}(?::\d\d)?)\s*([ap]\.?m\.?)', t.strip(), re.I)
+        return f'{e(m.group(1))}<small>{e(m.group(2).replace(".", "").lower())}</small>' if m else e(t)
+    rows = ''.join(f'<li data-day="{e(d["day"])}"><span class="ln">{e(d["day"])}</span>'
+                   + ''.join(f'<span class="lm">{e(i)}</span>' for i in d['items'])
+                   + (f'<span class="lt">{when(d["time"])}</span>' if d['time'] else '') + '</li>' for d in WEEK['days'])
+    by = f' by {e(WEEK["by"])}' if WEEK.get('by') else ''
+    section = (f'<section id="week" role="tabpanel" data-week="{wk.isoformat()}">\n <h2>Week of {md(wk)}</h2>\n'
+               f' <p class="sub">Practice schedule from <a href="{e(WEEK["link"])}" target="_blank" rel="noopener">{e(WEEK["title"])}</a>, '
+               f'posted {md(datetime.date.fromisoformat(WEEK["posted"]))}{by}. Check the post and TeamSnap for changes.</p>\n'
+               f' <p class="note" id="weekOld" hidden>No schedule has been posted for this week yet. This is the latest one.</p>\n'
+               f' <ul class="list" id="weekList">{rows}</ul>\n</section>\n')
+    # today's row stands out; a schedule more than a week old says so
+    script = ("<style>#weekList li.today{background:var(--hawk-row)}#weekList li.today .ln::after{content:' · Today';font-weight:500;color:var(--muted)}</style>"
+              "<script>(function(){try{const s=document.getElementById('week'),pt=new Date(new Date().toLocaleString('en-US',{timeZone:'America/Los_Angeles'})),"
+              "w=new Date(s.dataset.week+'T00:00:00'),d=Math.floor((pt-w)/864e5),name=pt.toLocaleDateString('en-US',{weekday:'long'});"
+              "if(d>6)document.getElementById('weekOld').hidden=false;else if(d>=0)s.querySelectorAll('li').forEach(li=>{if(li.dataset.day.split(/ (?:or|and) /).includes(name))li.classList.add('today')})}catch(e){}})();</script>\n")
+    tab = '<button role="tab" aria-selected="false" data-tab="week">This week</button>'
+    first = re.search(r'<button role="tab" aria-selected="true" data-tab="roster">[^<]*</button>', html)
+    at = html.find('<section id="model"')
+    assert first and at > 0, 'tab bar or Method section not found'
+    html = html[:first.end()] + '\n ' + tab + html[first.end():]
+    at = html.find('<section id="model"')
+    return html[:at] + section + script + html[at:]
 
 import shutil
 for f in (root / 'src' / 'static').iterdir():   # icons, served next to the pages
