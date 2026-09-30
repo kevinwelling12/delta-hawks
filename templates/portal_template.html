@@ -485,11 +485,11 @@ function raceF(x){
 const raceTiles=(f,s)=>{const t1=s/f.c,t2=t1/f.h;   // course, then weather, then the day, each taken off the time in turn
  return [['Course',s-t1,courseNote(f.course,f.c)],['Weather',t1-t2,f.T==null?'not recorded':f.T+'°F'],['The day',t2-t2/f.day,`field ${pctW(f.day)<.5?'normal':pctW(f.day)+'% '+(f.day>1?'slow':'fast')}`]]};
 function fxRace(x){const f=raceF(x);return f&&raceTiles(f,clockSecs(x.time))}
-// the same tiles for a whole race on the meet results page, in seconds for the race's middle finisher
-function fxMeet(k,rows){
+// the same tiles for a whole race on the meet results page, as percentages: seconds differ by runner, percentages don't
+function fxMeet(k){
  let f=null;for(const r of D.runners){for(const x of r.races)if(x.date+'|'+x.meet+'|'+x.race===k&&(f=raceF(x)))break;if(f)break}
- const t=rows.map(r=>clockSecs(r.time)).filter(v=>v>0).sort((a,b)=>a-b);if(!f||!t.length)return null;
- const mid=t[t.length>>1];return {tiles:raceTiles(f,mid),mid}}
+ if(!f)return null;const pc=v=>{const q=Math.round((v-1)*1000)/10;return Math.abs(q)<.5?'0%':(q>0?'+':'−')+Math.abs(q)+'%'};
+ return [['Course',pc(f.c),f.course===D.meta.ref_course?'reference':'vs '+esc(REF)],['Weather',pc(f.h),f.T==null?'not recorded':f.T+'°F'],['The day',pc(f.day),'whole field']]}
 function fxNext(r,u){
  const lv=r.preds.find(p=>p.course===D.meta.ref_course&&Math.abs(p.dist-1.5)<.01),d=raceDist(u);if(!lv||!d||!(u.pred>0))return null;
  const m=sched.find(x=>x.date===u.date&&x.meet===u.meet),T=m&&m.temp?m.temp.f:null,h=heatF(T),base=lv.pred*Math.pow(d/1.5,D.meta.riegel);
@@ -557,7 +557,7 @@ let hawksOnly=false;
 function renderRace(){
  const k=$('#raceSel').value,rows=D.results.filter(r=>r.date+'|'+r.meet+'|'+r.race===k),h=rows.filter(r=>r.hawk);
  const full=rows[0]&&rows[0].full==='Y';
- $('#raceFx').innerHTML=(()=>{try{const m=fxMeet(k,rows);return m?fxTiles(m.tiles)+`<p class="sub" style="margin:6px 0 0">Seconds each factor added (+) or took off (−) for a ${fmt(m.mid)} finish, the middle of the results shown.</p>`:''}catch(e){return''}})();
+ $('#raceFx').innerHTML=(()=>{try{const m=fxMeet(k);return m?fxTiles(m)+`<p class="sub" style="margin:6px 0 0">How much each factor slowed (+) or sped up (−) every runner in this race.</p>`:''}catch(e){return''}})();
  $('#raceNote').textContent=`${fdate(rows[0].date)}. ${rows[0].field} finishers, ${h.length} Hawks.`+(full?'':' Only part of the field is stored for this race (Hawks, or youth finishers in a road race).');
  const show=hawksOnly?h:rows;
  $('#raceTable').innerHTML='<tr><th class="n">Pl</th><th>Name</th><th>Yr</th><th class="lg">Team</th><th class="n">Time</th></tr>'+show.map(r=>`<tr class="${r.hawk?'hawk':''}"><td class="n">${r.place}</td><td class="w">${esc(r.name)}<span class="rm sm">${esc(r.team)}</span></td><td>${esc(r.yr)}</td><td class="lg">${esc(r.team)}</td><td class="n">${esc(r.time)}</td></tr>`).join('');
