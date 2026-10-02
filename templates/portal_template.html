@@ -583,11 +583,15 @@ $('#raceSel').onchange=renderRace;
 $('#hawksOnly').onclick=e=>{hawksOnly=!hawksOnly;e.currentTarget.setAttribute('aria-pressed',hawksOnly);renderRace()};
 
 // records (unofficial): each athlete's best Hawks race by its day-adjusted 1.5 mi reference equivalent
-const xrAge=x=>{const r=String(x.race||''),b=r.match(/\b(\d{1,2})\s*-\s*(\d{1,2})\b/),u=r.match(/\b(\d{1,2})\s*(?:U\b|&\s*under|and\s*under)/i);   // the age group raced in, from the race name
- if(b){const lo=+b[1];return lo>=15?'15+':lo>=13?'13-14':lo>=11?'11-12':lo>=9?'9-10':'8U'}if(u)return +u[1]<=8?'8U':null;if(/\b(1[5-9])\s*(?:&|and)\s*(?:over|up)\b|\bopen\b/i.test(r))return '15+';return null};
+// age group for the Records tab: the race's own group at USATF age-group races (9-10, 11-12, 13-14, 8U, "8 & under");
+// otherwise the USATF age on Dec 31 from the birth estimate (x.ag). Youth ranges like "ages 8-14" and grade races like
+// "6 and under" are not age groups.
+const xrAge=x=>{const r=String(x.race||''),b=r.match(/\b(\d{1,2})\s*-\s*(\d{1,2})\b/),u=r.match(/\b(\d{1,2})U\b|\b(8)\s*(?:&|and)\s*under\b/i);
+ if(b&&+b[2]-+b[1]===1&&+b[1]%2===1&&+b[1]>=9){const lo=+b[1];return lo>=15?'15+':lo>=13?'13-14':lo>=11?'11-12':'9-10'}
+ if(u&&+(u[1]||u[2])<=8)return '8U';return x.ag||null};
 const XR=[];D.runners.forEach(r=>r.races.forEach(x=>{if(x.equiv_day>0&&(!x.team||x.team==='Delta Hawks'))XR.push({r,x,ag:xrAge(x)})}));
 let XG='F',xrAct=false;
-$('#xrSub').textContent=`Unofficial. Each athlete's best race for the Delta Hawks, ranked by its 1.5 mi ${REF} equivalent: the clock time with course, distance, weather and the day taken out, so races on any course line up. Age groups are the ones raced in. Tap a name for details.`;
+$('#xrSub').textContent=`Unofficial. Each athlete's best race for the Delta Hawks, ranked by its 1.5 mi ${REF} equivalent: the clock time with course, distance, weather and the day taken out, so races on any course line up. Age groups are the USATF ones: the group raced in at age-group meets, otherwise the athlete's age on Dec 31 of that year. Tap a name for details.`;
 $('#xrSeason').innerHTML='<option value="">All-time</option>'+[...new Set(XR.map(o=>o.x.date.slice(0,4)))].sort().reverse().map(y=>`<option value="${y}">${y} season</option>`).join('');
 function renderRecordsXC(){const y=$('#xrSeason').value,ag=$('#xrAge').value,best=new Map();
  XR.filter(o=>o.r.gender===XG&&(!y||o.x.date.startsWith(y))&&(!ag||o.ag===ag)&&(!xrAct||o.r.active)).forEach(o=>{const b=best.get(o.r.id);if(!b||o.x.equiv_day<b.x.equiv_day)best.set(o.r.id,o)});
