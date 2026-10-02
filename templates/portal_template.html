@@ -208,6 +208,7 @@ input.tin[aria-invalid="true"]{border-color:#B3261E;box-shadow:inset 0 0 0 1px #
  <button role="tab" aria-selected="true" data-tab="roster">Projections</button>
  <button role="tab" aria-selected="false" data-tab="runner">Athletes</button>
  <button role="tab" aria-selected="false" data-tab="meets">Meets</button>
+ <button role="tab" aria-selected="false" data-tab="records">Records</button>
  <button role="tab" aria-selected="false" data-tab="alumni">Alumni</button>
  <button role="tab" aria-selected="false" data-tab="model">Method</button>
 </div></nav>
@@ -238,6 +239,20 @@ input.tin[aria-invalid="true"]{border-color:#B3261E;box-shadow:inset 0 0 0 1px #
  <div id="raceFx" style="margin-bottom:12px"></div>
  <p class="sub" id="raceNote"></p>
  <div class="scroll"><table id="raceTable"></table></div>
+</section>
+
+<section id="records" role="tabpanel">
+ <h2 id="xrTitle"></h2>
+ <p class="sub" id="xrSub"></p>
+ <div class="bar" id="xrFilters">
+  <select id="xrSeason" aria-label="Season"></select>
+  <button class="chip" data-g="F" aria-pressed="true">Girls</button>
+  <button class="chip" data-g="M" aria-pressed="false">Boys</button>
+  <select id="xrAge" aria-label="Age group"><option value="">All ages</option><option>8U</option><option>9-10</option><option>11-12</option><option>13-14</option><option>15+</option></select>
+  <button class="chip" id="xrActive" aria-pressed="false">Current roster</button>
+ </div>
+ <div class="scroll"><table id="xrTable"></table></div>
+ <p class="sub" style="margin-top:10px">These are not official club records, which use actual times on the same course. Equivalents are refit as new results come in, so ranks can shift slightly.</p>
 </section>
 
 <section id="alumni" role="tabpanel">
@@ -564,6 +579,26 @@ function renderRace(){
 }
 $('#raceSel').onchange=renderRace;
 $('#hawksOnly').onclick=e=>{hawksOnly=!hawksOnly;e.currentTarget.setAttribute('aria-pressed',hawksOnly);renderRace()};
+
+// records (unofficial): each athlete's best Hawks race by its day-adjusted 1.5 mi reference equivalent
+const xrAge=x=>{const r=String(x.race||''),b=r.match(/\b(\d{1,2})\s*-\s*(\d{1,2})\b/),u=r.match(/\b(\d{1,2})\s*(?:U\b|&\s*under|and\s*under)/i);   // the age group raced in, from the race name
+ if(b){const lo=+b[1];return lo>=15?'15+':lo>=13?'13-14':lo>=11?'11-12':lo>=9?'9-10':'8U'}if(u)return +u[1]<=8?'8U':null;if(/\b(1[5-9])\s*(?:&|and)\s*(?:over|up)\b|\bopen\b/i.test(r))return '15+';return null};
+const XR=[];D.runners.forEach(r=>r.races.forEach(x=>{if(x.equiv_day>0&&(!x.team||x.team==='Delta Hawks'))XR.push({r,x,ag:xrAge(x)})}));
+let XG='F',xrAct=false;
+$('#xrSub').textContent=`Unofficial. Each athlete's best race for the Delta Hawks, ranked by its 1.5 mi ${REF} equivalent: the clock time with course, distance, weather and the day taken out, so races on any course line up. Age groups are the ones raced in. Tap a name for details.`;
+$('#xrSeason').innerHTML='<option value="">All-time</option>'+[...new Set(XR.map(o=>o.x.date.slice(0,4)))].sort().reverse().map(y=>`<option value="${y}">${y} season</option>`).join('');
+function renderRecordsXC(){const y=$('#xrSeason').value,ag=$('#xrAge').value,best=new Map();
+ XR.filter(o=>o.r.gender===XG&&(!y||o.x.date.startsWith(y))&&(!ag||o.ag===ag)&&(!xrAct||o.r.active)).forEach(o=>{const b=best.get(o.r.id);if(!b||o.x.equiv_day<b.x.equiv_day)best.set(o.r.id,o)});
+ const list=[...best.values()].sort((a,b)=>a.x.equiv_day-b.x.equiv_day);
+ $('#xrTitle').textContent=`${XG==='F'?'Girls':'Boys'}, ${y?y+' season':'all-time'}${ag?', '+ag:''}`;
+ $('#xrTable').innerHTML=list.length?`<tr><th class="n">#</th><th>Athlete</th><th class="n">1.5 mi equiv.</th><th class="lg">Actual</th><th class="lg">Age group</th><th class="lg">Meet</th><th class="lg">Date</th></tr>`+
+  list.map(({r,x,ag},i)=>`<tr><td class="n">${i+1}</td><td class="w"><a href="#" data-ath="${esc(r.id)}">${esc(r.name)}</a><span class="rm sm">${esc(x.time)} at ${esc(x.meet)}, ${fdate(x.date)}${ag?', '+ag:''}</span></td><td class="n">${fmt(x.equiv_day)}</td><td class="lg">${esc(x.time)}<span class="rm">${esc(courseShort(x.course))}</span></td><td class="lg">${ag||''}</td><td class="lg" style="white-space:normal">${esc(x.meet)}</td><td class="lg">${fdate(x.date)}</td></tr>`).join('')
+  :'<tr><td class="empty">No races match.</td></tr>';
+ document.querySelectorAll('#xrTable a[data-ath]').forEach(a=>a.onclick=e=>{e.preventDefault();openRunner(a.dataset.ath)})}
+document.querySelectorAll('#xrFilters [data-g]').forEach(b=>b.onclick=()=>{XG=b.dataset.g;document.querySelectorAll('#xrFilters [data-g]').forEach(x=>x.setAttribute('aria-pressed',x===b));renderRecordsXC()});
+['#xrSeason','#xrAge'].forEach(q=>$(q).onchange=renderRecordsXC);
+$('#xrActive').onclick=e=>{xrAct=!xrAct;e.currentTarget.setAttribute('aria-pressed',xrAct);renderRecordsXC()};
+renderRecordsXC();
 
 // model
 const M=D.meta,bt=M.backtest,pct=v=>(v*100).toFixed(1)+'%';
