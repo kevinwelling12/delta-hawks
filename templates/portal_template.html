@@ -325,6 +325,8 @@ function gradeAge(r){
   else{out.grade=`${nth(c)} grade in ${SY}-${String(SY+1).slice(2)}`;out.short=`${nth(c)} grade`}}
  // grade listings are more reliable than ages, so an age shows only when no grade was ever listed
  if(a&&!g){out.age=`about ${a.n+Math.round((now-new Date(a.date+'T12:00:00'))/(365.25*864e5))}`}
+ // a birth date from the club (age_known) beats both: the USATF age on Dec 31 of this year
+ if(r.age_known&&r.age!=null)out.age=`age ${r.age} on Dec 31`;
  return out;
 }
 $('#updated').textContent='Data updated '+fdate(D.meta.as_of)+'.';
@@ -549,7 +551,7 @@ function renderRunner(id){
  const lv=r.preds.find(p=>p.course===D.meta.ref_course&&Math.abs(p.dist-1.5)<.01);
  const past=r.races[r.races.length-1];
  const pb=r.postBased,lastAny=pb?pb.last:past.date,stale=(new Date(D.meta.as_of)-new Date(lastAny))/864e5>200,ga=gradeAge(r);
- $('#runnerBody').innerHTML=`<h2>${esc(r.name)}</h2><p class="sub">${r.gender==='F'?'Girls':'Boys'}${ga.grade?', '+ga.grade:''}${ga.age?`, ${ga.grade?'':'age '}${ga.age}`:''}${ga.grade?'. Projected from the grade listed at past meets.':ga.age?'. Projected from the age listed at past meets.':''}</p>
+ $('#runnerBody').innerHTML=`<h2>${esc(r.name)}</h2><p class="sub">${r.gender==='F'?'Girls':'Boys'}${ga.grade?', '+ga.grade:''}${ga.age?`, ${ga.grade||/^age /.test(ga.age)?'':'age '}${ga.age}`:''}${ga.grade?'. Projected from the grade listed at past meets.':ga.age?'. Projected from the age listed at past meets.':''}</p>
  <div class="hero"><div class="big">${fmt(lv.pred)}</div><p class="cap">Expected 1.5 mi at ${REF} if raced today${pb?`, based on ${pb.n} race${pb.n>1?'s':''} since the Hawks for ${esc(pb.team)}, most recently ${esc(pb.meet)} on ${fdate(pb.last)}. Those courses are not rated yet, so this is a rougher estimate`:''}. 8 in 10 races should land between ${fmt(lv.lo)} and ${fmt(lv.hi)}.</p>
  ${strip(lv)}<div class="legend"><span><i class="swatch"></i>Likely range</span><span><i class="mk"></i>Expected</span>${lv.pr?`<span><i class="${lv.pr>=lv.lo&&lv.pr<=lv.hi?'mk dash':'dash-out'}"></i>Course best ${fmtT(lv.pr)}</span>`:''}</div>
  ${stale?`<p class="note">Last race was ${fdate(lastAny)}. With a long gap the range widens, because kids this age improve at very different rates.</p>`:''}</div>
