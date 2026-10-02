@@ -245,6 +245,7 @@ input.tin[aria-invalid="true"]{border-color:#B3261E;box-shadow:inset 0 0 0 1px #
  <h2 id="xrTitle"></h2>
  <p class="sub" id="xrSub"></p>
  <div class="bar" id="xrFilters">
+  <select id="xrView" aria-label="Record"><option value="fast">Fastest</option><option value="meets">Most meets</option></select>
   <select id="xrSeason" aria-label="Season"></select>
   <button class="chip" data-g="F" aria-pressed="true">Girls</button>
   <button class="chip" data-g="M" aria-pressed="false">Boys</button>
@@ -252,7 +253,7 @@ input.tin[aria-invalid="true"]{border-color:#B3261E;box-shadow:inset 0 0 0 1px #
   <button class="chip" id="xrActive" aria-pressed="false">Current roster</button>
  </div>
  <div class="scroll"><table id="xrTable"></table></div>
- <p class="sub" style="margin-top:10px">These are not official club records, which use actual times on the same course. Equivalents are refit as new results come in, so ranks can shift slightly.</p>
+ <p class="sub" id="xrNote" style="margin-top:10px">These are not official club records, which use actual times on the same course. Equivalents are refit as new results come in, so ranks can shift slightly.</p>
 </section>
 
 <section id="alumni" role="tabpanel">
@@ -591,9 +592,22 @@ const xrAge=x=>{const r=String(x.race||''),b=r.match(/\b(\d{1,2})\s*-\s*(\d{1,2}
  if(u&&+(u[1]||u[2])<=8)return '8U';return x.ag||null};
 const XR=[];D.runners.forEach(r=>r.races.forEach(x=>{if(x.equiv_day>0&&(!x.team||x.team==='Delta Hawks'))XR.push({r,x,ag:xrAge(x)})}));
 let XG='F',xrAct=false;
-$('#xrSub').textContent=`Unofficial. Each athlete's best race for the Delta Hawks, ranked by its 1.5 mi ${REF} equivalent: the clock time with course, distance, weather and the day taken out, so races on any course line up. Age groups are the USATF ones: the group raced in at age-group meets, otherwise the athlete's age on Dec 31 of that year. Tap a name for details.`;
+const XR_SUB=`Unofficial. Each athlete's best race for the Delta Hawks, ranked by its 1.5 mi ${REF} equivalent: the clock time with course, distance, weather and the day taken out, so races on any course line up. Age groups are the USATF ones: the group raced in at age-group meets, otherwise the athlete's age on Dec 31 of that year. Tap a name for details.`;
 $('#xrSeason').innerHTML='<option value="">All-time</option>'+[...new Set(XR.map(o=>o.x.date.slice(0,4)))].sort().reverse().map(y=>`<option value="${y}">${y} season</option>`).join('');
-function renderRecordsXC(){const y=$('#xrSeason').value,ag=$('#xrAge').value,best=new Map();
+// most meets: distinct meets (date + meet) run for the Delta Hawks, the same races the fastest list uses
+function renderMeetsXC(y){const by=new Map();
+ D.runners.forEach(r=>{if(r.gender!==XG||(xrAct&&!r.active))return;const m=new Map();
+  r.races.forEach(x=>{if((!x.team||x.team==='Delta Hawks')&&(!y||x.date.startsWith(y)))m.set(x.date+'|'+x.meet,x)});
+  if(m.size){const xs=[...m.values()].sort((a,b)=>a.date.localeCompare(b.date)),ss=new Set(xs.map(x=>x.date.slice(0,4)));by.set(r.id,{r,n:xs.length,ss:ss.size,first:xs[0],last:xs[xs.length-1]})}});
+ const list=[...by.values()].sort((a,b)=>b.n-a.n||b.ss-a.ss||a.r.name.localeCompare(b.r.name));
+ $('#xrTitle').textContent=`${XG==='F'?'Girls':'Boys'}, ${y?y+' season':'all-time'}, most meets`;
+ let rk=0;$('#xrTable').innerHTML=list.length?`<tr><th class="n">#</th><th>Athlete</th><th class="n">Meets</th><th class="n lg">Seasons</th><th class="lg">First</th><th class="lg">Latest</th></tr>`+
+  list.map((o,i)=>{if(!i||o.n!==list[i-1].n)rk=i+1;return `<tr><td class="n">${rk}</td><td class="w"><a href="#" data-ath="${esc(o.r.id)}">${esc(o.r.name)}</a><span class="rm sm">${o.ss} season${o.ss>1?'s':''}, ${o.first.date.slice(0,4)}${o.ss>1?'-'+o.last.date.slice(0,4):''}</span></td><td class="n">${o.n}</td><td class="n lg">${o.ss}</td><td class="lg" style="white-space:normal">${esc(o.first.meet)}<span class="rm">${fdate(o.first.date)}</span></td><td class="lg" style="white-space:normal">${esc(o.last.meet)}<span class="rm">${fdate(o.last.date)}</span></td></tr>`}).join('')
+  :'<tr><td class="empty">No races match.</td></tr>';
+ document.querySelectorAll('#xrTable a[data-ath]').forEach(a=>a.onclick=e=>{e.preventDefault();openRunner(a.dataset.ath)})}
+function renderRecordsXC(){const y=$('#xrSeason').value,ag=$('#xrAge').value,best=new Map(),meets=$('#xrView').value==='meets';
+ $('#xrAge').style.display=$('#xrNote').style.display=meets?'none':'';$('#xrSub').textContent=meets?`Meets run for the Delta Hawks, counted once per meet even when an athlete ran two races there. Races for schools or unattached are left out. Tap a name for details.`:XR_SUB;
+ if(meets)return renderMeetsXC(y);
  XR.filter(o=>o.r.gender===XG&&(!y||o.x.date.startsWith(y))&&(!ag||o.ag===ag)&&(!xrAct||o.r.active)).forEach(o=>{const b=best.get(o.r.id);if(!b||o.x.equiv_day<b.x.equiv_day)best.set(o.r.id,o)});
  const list=[...best.values()].sort((a,b)=>a.x.equiv_day-b.x.equiv_day);
  $('#xrTitle').textContent=`${XG==='F'?'Girls':'Boys'}, ${y?y+' season':'all-time'}${ag?', '+ag:''}`;
@@ -602,7 +616,7 @@ function renderRecordsXC(){const y=$('#xrSeason').value,ag=$('#xrAge').value,bes
   :'<tr><td class="empty">No races match.</td></tr>';
  document.querySelectorAll('#xrTable a[data-ath]').forEach(a=>a.onclick=e=>{e.preventDefault();openRunner(a.dataset.ath)})}
 document.querySelectorAll('#xrFilters [data-g]').forEach(b=>b.onclick=()=>{XG=b.dataset.g;document.querySelectorAll('#xrFilters [data-g]').forEach(x=>x.setAttribute('aria-pressed',x===b));renderRecordsXC()});
-['#xrSeason','#xrAge'].forEach(q=>$(q).onchange=renderRecordsXC);
+['#xrView','#xrSeason','#xrAge'].forEach(q=>$(q).onchange=renderRecordsXC);
 $('#xrActive').onclick=e=>{xrAct=!xrAct;e.currentTarget.setAttribute('aria-pressed',xrAct);renderRecordsXC()};
 renderRecordsXC();
 
