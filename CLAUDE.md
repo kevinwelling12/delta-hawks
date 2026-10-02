@@ -24,7 +24,9 @@ the sibling folder ../delta-hawks (private, not in git; read its CLAUDE.md for t
 - Gate behavior (src/gate.js): first visit on a device checks members/{email}, downloads the portal,
   saves the gzipped copy in IndexedDB and remembers the member in localStorage ('dh-member'). Return
   visits open from that copy at once and check membership and version in the background (removed:
-  clear and reload to "Not on the list"; newer: download and show a reload note). "Loading..." shows
+  clear and reload to "Not on the list"; newer: download and show a reload note). On a first visit, a read refused
+  right after Google sign-in (Firestore not yet holding the new token) gets a fresh token and two retries before
+  the error card; the card names the error code and step (2026-10-02, a new user's first load failed until reload). "Loading..." shows
   only after 600 ms (inline script in gate.html, which also covers gate.js failing); gate.js has a
   20 s watchdog naming the stuck step. If the portal script errors on start, the copy is dropped and
   the page reloads once. Pull to refresh exists only in the home screen web app (standalone).

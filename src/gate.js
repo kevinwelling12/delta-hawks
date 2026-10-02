@@ -18,7 +18,7 @@
   const auth = firebase.auth(), db = firebase.firestore();
   // Connection type: Firestore's default auto-detects long polling where needed (forcing it throws alongside that default).
   if (window.DH_EMULATOR) { auth.useEmulator('http://127.0.0.1:9099'); db.useEmulator('127.0.0.1', 8080); }
-  let me = null, started = false, stage = 'starting';
+  let me = null, started = false, running = null, stage = 'starting';
   // Watchdog: if the portal has not started after 20 s, say where it is stuck instead of leaving a blank or spinning page.
   setTimeout(() => {
     if (started || !gate.hidden && !/Loading|Checking/.test(box.textContent)) return;
@@ -160,16 +160,30 @@
       <p class="sub" style="margin-top:18px">Details for Kevin: ${esc(e.message || e)} (${esc(navigator.userAgent)})</p>`);
   };
   const stalled = e => show(`<h2>Couldn't load the results</h2><p>${esc(e.message || e)} This is usually a weak connection.</p>
-    <p><button class="chip dh-go" data-dh="retry">Try again</button> <button class="chip" data-dh="signout">Sign out</button></p>`);
+    <p><button class="chip dh-go" data-dh="retry">Try again</button> <button class="chip" data-dh="signout">Sign out</button></p>
+    <p class="sub" style="margin-top:18px">Details for Kevin: ${esc(e.code || 'no code')} at "${esc(stage)}" (${esc(navigator.userAgent)})</p>`);
   const notInvited = email => { cacheClear(); memo.clear();          // removed members keep nothing on the device
     show(`<h2>Not on the list yet</h2><p>${esc(email)} hasn't been invited. Ask Kevin to add this address, or sign in with a different Google account.</p>
       <p><button class="chip" data-dh="signout">Use a different account</button></p>`); };
   const checkMember = async email => { const d = await timeout(db.doc('members/' + email).get(), 12000); return d.exists ? d.data() : null; };
+  // Right after the Google sign-in, Firestore's first read can go out before it has the new token and come back
+  // "Missing or insufficient permissions" (a reload then works). Refresh the token and try again, twice at most.
+  const freshAuth = async (f, tries = 2) => {
+    for (let i = 0; ; i++) {
+      try { return await f(); }
+      catch (e) {
+        if (i >= tries || !/permission-denied|unauthenticated/.test(e.code || '')) throw e;
+        try { await timeout(auth.currentUser.getIdToken(true), 8000); } catch (x) {}
+        await new Promise(r => setTimeout(r, 500 * (i + 1)));
+      }
+    }
+  };
 
   stage = 'restoring sign-in';
   auth.onAuthStateChanged(async user => {
     if (!user) { lastErr ? failed(lastErr) : signInCard(); return; }
-    if (started) return;
+    if (started || running === user.uid) return;                   // one run per sign-in, even if this fires twice
+    running = user.uid;
     stage = 'reading saved copy';
     const email = (user.email || '').toLowerCase(), known = memo.get(), cached = await cacheGet(KEY);
 
@@ -190,13 +204,13 @@
     stage = 'checking invite';
     show('<h2>Delta Hawks results</h2><p class="sub">Checking your invite…</p>');
     let m;
-    try { m = await checkMember(email); } catch (e) { stalled(e); return; }
+    try { m = await freshAuth(() => checkMember(email)); } catch (e) { running = null; stalled(e); return; }
     if (!m) { notInvited(email); return; }
     memo.set({ email, role: m.role });
     stage = 'downloading results';
     show('<h2>Delta Hawks results</h2><p class="sub">Loading results…</p>');
     let rec;
-    try { rec = await timeout(loadData(), 45000); } catch (e) { stalled(e); return; }
+    try { rec = await timeout(freshAuth(loadData), 45000); } catch (e) { running = null; stalled(e); return; }
     stage = 'starting portal';
     try { start(rec, m.role, email); } catch (e) { broken(e); }
   });
