@@ -651,7 +651,7 @@ function trainingGroups(){
   if(!o.raced||!o.pred){lvl=0;why.push('no race yet')}
   else{if(lvl===2&&!(o.pAge>=1)){lvl=1;why.push('under 11')}if(lvl===2&&o.exp===0){lvl=1;why.push('first season')}}
   o.level=lvl;o.why=why;o.review=[o.near?'near a pace cutoff':'',o.raced&&!o.ageSure?'age estimated':'',o.of&&o.of<3?'fewer than 3 to rank':''].filter(Boolean)});
- return rows.sort((a,b)=>b.level-a.level||a.sex.localeCompare(b.sex)||String(a.ag).localeCompare(String(b.ag),undefined,{numeric:true})||(a.pred||1e9)-(b.pred||1e9))}
+ return rows.sort((a,b)=>b.total-a.total||b.level-a.level||(a.pred||1e9)-(b.pred||1e9))}   // most points first; ties: higher level, then faster
 const GRP_COLS=['Name','Level','Sex','Age group','Expected 1.5 mi','Pace rank','Earlier seasons','Age pts','Pace pts','Experience pts','Total','Notes'];
 const grpRow=o=>[o.name,grpLevel[o.level],o.sex,o.ag||'',o.pred?fmt(o.pred):'',o.rank?`${o.rank} of ${o.of}`:'',o.exp,o.pAge,o.pPace,o.pExp,o.total,o.why.concat(o.review).join('; ')];
 function renderGroups(){const rows=trainingGroups(),c=[0,0,0];rows.forEach(o=>c[o.level]++);
