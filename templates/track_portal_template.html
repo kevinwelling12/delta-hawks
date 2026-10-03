@@ -67,6 +67,7 @@ h2{font:700 clamp(26px,4.4vw,34px)/1.05 var(--cond);letter-spacing:.02em;text-tr
 h3{font:700 22px/1.15 var(--cond);letter-spacing:.01em;margin:40px 0 10px}
 .sub{color:var(--muted);font-size:14px;margin:0 0 14px;max-width:68ch}
 .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px}
+.bar .pair{display:inline-flex;gap:8px}   /* Girls and Boys stay on one line */
 .chip{min-height:40px;border:1px solid var(--ctl);background:var(--bg);padding:0 16px;border-radius:6px;font:600 16px/1 var(--cond);letter-spacing:.04em;text-transform:uppercase;cursor:pointer;color:var(--muted)}
 .chip:hover{border-color:var(--ink);color:var(--ink)}
 .chip[aria-pressed="true"]{background:var(--sel-bg);border-color:var(--sel-bg);color:var(--sel-fg)}
@@ -224,12 +225,11 @@ input.tin[aria-invalid="true"]{border-color:#B3261E;box-shadow:inset 0 0 0 1px #
  <h2 id="recTitle"></h2>
  <p class="sub">Best mark per athlete in the club's distance events, 800 m to 2 miles, run for the Delta Hawks at that exact distance. Age groups follow the USATF rule (age on December 31). Tap a name for details.</p>
  <div class="bar" id="recFilters">
+  <span class="pair"><button class="chip" data-g="F" aria-pressed="true">Girls</button><button class="chip" data-g="M" aria-pressed="false">Boys</button></span>
+  <button class="chip" id="rActive" aria-pressed="false">2026 roster</button>
   <select id="rSeason" aria-label="Season"></select>
-  <button class="chip" data-g="F" aria-pressed="true">Girls</button>
-  <button class="chip" data-g="M" aria-pressed="false">Boys</button>
   <select id="rEvent" aria-label="Event"></select>
   <select id="rAge" aria-label="Age group"><option value="">All ages</option><option>8U</option><option>9-10</option><option>11-12</option><option>13-14</option><option>15+</option></select>
-  <button class="chip" id="rActive" aria-pressed="false">2026 roster</button>
  </div>
  <div class="scroll"><table id="recTable"></table></div>
  <div id="recNote"></div>
