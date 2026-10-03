@@ -210,6 +210,7 @@ input.tin[aria-invalid="true"]{border-color:#B3261E;box-shadow:inset 0 0 0 1px #
  <button role="tab" aria-selected="false" data-tab="runner">Athletes</button>
  <button role="tab" aria-selected="false" data-tab="meets">Meets</button>
  <button role="tab" aria-selected="false" data-tab="records">Records</button>
+ <button role="tab" aria-selected="false" data-tab="groups" id="groupsTab" hidden>Groups</button>
  <button role="tab" aria-selected="false" data-tab="alumni">Alumni</button>
  <button role="tab" aria-selected="false" data-tab="model">Method</button>
 </div></nav>
@@ -254,6 +255,14 @@ input.tin[aria-invalid="true"]{border-color:#B3261E;box-shadow:inset 0 0 0 1px #
  </div>
  <div class="scroll"><table id="xrTable"></table></div>
  <p class="sub" id="xrNote" style="margin-top:10px">These are not official club records, which use actual times on the same course. Equivalents are refit as new results come in, so ranks can shift slightly.</p>
+</section>
+
+<section id="groups" role="tabpanel">
+ <h2>Training groups</h2>
+ <p class="sub">Admins only. The 2026 roster placed by the rules in the training plan: up to 2 points each for age, pace and experience; 0 to 2 novice, 3 to 4 intermediate, 5 to 6 advanced. Advanced needs age 11 or over, a first season is at most intermediate, and an athlete with no race yet is novice. Pace is ranked within sex and age group. Experience counts earlier cross country seasons with 2 or more Hawks races (track seasons are not in this data). Coaches have the final say.</p>
+ <div class="bar" id="grpBar"><button class="chip" id="grpCopy">Copy for Sheets</button><button class="chip" id="grpCsv">Download CSV</button><span class="sub" id="grpCounts" style="margin:0"></span></div>
+ <div class="scroll"><table id="grpTable"></table></div>
+ <p class="sub" style="margin-top:10px">Highlighted: within 5 seconds of someone in another pace third, worth a coach's look. Notes also flag ages estimated from race listings and age groups with fewer than 3 athletes, where pace thirds mean little.</p>
 </section>
 
 <section id="alumni" role="tabpanel">
@@ -619,6 +628,42 @@ document.querySelectorAll('#xrFilters [data-g]').forEach(b=>b.onclick=()=>{XG=b.
 ['#xrView','#xrSeason','#xrAge'].forEach(q=>$(q).onchange=renderRecordsXC);
 $('#xrActive').onclick=e=>{xrAct=!xrAct;e.currentTarget.setAttribute('aria-pressed',xrAct);renderRecordsXC()};
 renderRecordsXC();
+
+// training groups (admins only): the placement rules from the training plan, applied to the current roster
+const grpLevel=['Novice','Intermediate','Advanced'];
+const grpAgeGroup=a=>a==null?null:a<=8?'8U':a<=10?'9-10':a<=12?'11-12':a<=14?'13-14':'15+';
+function trainingGroups(){
+ const rows=D.runners.filter(r=>r.active).map(r=>{
+  const lv=r.preds.find(p=>p.course===D.meta.ref_course&&Math.abs(p.dist-1.5)<.01),last=r.races.slice().sort((a,b)=>a.date.localeCompare(b.date)).pop();
+  const age=r.age!=null?r.age:null,ag=age!=null?grpAgeGroup(age):last&&last.ag||null,ageSure=!!(r.age_known&&r.age!=null);
+  const seasons=new Map();r.races.forEach(x=>{if(x.date<'2026-08-01'&&(!x.team||x.team==='Delta Hawks')){const y=x.date.slice(0,4);seasons.set(y,(seasons.get(y)||0)+1)}});
+  const exp=[...seasons.values()].filter(n=>n>=2).length;
+  return {r,name:r.name,sex:r.gender==='F'?'Girls':'Boys',ag,age,ageSure,pred:lv?lv.pred:null,raced:r.races.length>0,exp}});
+ (D.meta.roster||[]).filter(x=>!x.id).forEach(x=>rows.push({name:x.name,sex:x.gender==='F'?'Girls':x.gender==='M'?'Boys':'',ag:null,age:null,ageSure:false,pred:null,raced:false,exp:0}));
+ const groups=new Map();rows.filter(o=>o.pred&&o.raced).forEach(o=>{const k=o.sex+'|'+o.ag;if(!groups.has(k))groups.set(k,[]);groups.get(k).push(o)});
+ groups.forEach(list=>{list.sort((a,b)=>a.pred-b.pred);const n=list.length,tier=i=>n<3?1:i<n/3?2:i>=2*n/3?0:1;   // thirds by pace, fastest first
+  list.forEach((o,i)=>{o.rank=i+1;o.of=n;o.pPace=tier(i)});
+  list.forEach(o=>{o.near=n>=3&&list.some(q=>q.pPace!==o.pPace&&Math.abs(q.pred-o.pred)<5)})});   // within 5 s of someone in another third
+ rows.forEach(o=>{o.pAge=o.age!=null?(o.age<=10?0:o.age<=12?1:2):o.ag?(['8U','9-10'].includes(o.ag)?0:o.ag==='11-12'?1:2):0;
+  o.pExp=Math.min(o.exp,2);if(o.pPace==null)o.pPace=0;o.total=o.pAge+o.pPace+o.pExp;
+  let lvl=o.total>=5?2:o.total>=3?1:0,why=[];
+  if(!o.raced||!o.pred){lvl=0;why.push('no race yet')}
+  else{if(lvl===2&&!(o.pAge>=1)){lvl=1;why.push('under 11')}if(lvl===2&&o.exp===0){lvl=1;why.push('first season')}}
+  o.level=lvl;o.why=why;o.review=[o.near?'near a pace cutoff':'',o.raced&&!o.ageSure?'age estimated':'',o.of&&o.of<3?'small group':''].filter(Boolean)});
+ return rows.sort((a,b)=>b.level-a.level||a.sex.localeCompare(b.sex)||String(a.ag).localeCompare(String(b.ag),undefined,{numeric:true})||(a.pred||1e9)-(b.pred||1e9))}
+const GRP_COLS=['Name','Level','Sex','Age group','Expected 1.5 mi','Pace rank','Earlier seasons','Age pts','Pace pts','Experience pts','Total','Notes'];
+const grpRow=o=>[o.name,grpLevel[o.level],o.sex,o.ag||'',o.pred?fmt(o.pred):'',o.rank?`${o.rank} of ${o.of}`:'',o.exp,o.pAge,o.pPace,o.pExp,o.total,o.why.concat(o.review).join('; ')];
+function renderGroups(){const rows=trainingGroups(),c=[0,0,0];rows.forEach(o=>c[o.level]++);
+ $('#grpCounts').textContent=`${rows.length} athletes: ${c[2]} advanced, ${c[1]} intermediate, ${c[0]} novice`;
+ $('#grpTable').innerHTML='<tr>'+GRP_COLS.map((h,i)=>`<th${[4,5,6,7,8,9,10].includes(i)?' class="n"':''}>${h}</th>`).join('')+'</tr>'+
+  rows.map(o=>`<tr${o.near?' class="hawk"':''}>`+grpRow(o).map((v,i)=>`<td${[4,5,6,7,8,9,10].includes(i)?' class="n"':i===11?' style="white-space:normal;min-width:12em"':''}>${i===0&&o.r?`<a href="#" data-ath="${esc(o.r.id)}">${esc(v)}</a>`:esc(v)}</td>`).join('')+'</tr>').join('');
+ document.querySelectorAll('#grpTable a[data-ath]').forEach(a=>a.onclick=e=>{e.preventDefault();openRunner(a.dataset.ath)});
+ const table=(sep,q)=>[GRP_COLS].concat(rows.map(grpRow)).map(r=>r.map(q).join(sep)).join('\n');
+ $('#grpCopy').onclick=async e=>{const b=e.currentTarget;try{await navigator.clipboard.writeText(table('\t',v=>String(v).replace(/[\t\n]/g,' ')));b.textContent='Copied'}catch(x){b.textContent='Copy failed'}setTimeout(()=>b.textContent='Copy for Sheets',2000)};
+ $('#grpCsv').onclick=()=>{const csv=table(',',v=>{v=String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}),a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`hawks-training-groups-${D.meta.as_of}.csv`;document.body.appendChild(a);a.click();a.remove()}}
+// shown only to admins on the web portal (the sign-in gate sets the role); coaches can read the same data, so this hides a view, not data
+if(window.DH_ROLE==='admin'){$('#groupsTab').hidden=false;try{renderGroups()}catch(e){$('#grpTable').innerHTML='<tr><td class="empty">Could not build the groups.</td></tr>'}}
 
 // model
 const M=D.meta,bt=M.backtest,pct=v=>(v*100).toFixed(1)+'%';
