@@ -32,10 +32,6 @@ the sibling folder ../delta-hawks (private, not in git; read its CLAUDE.md for t
   the page reloads once. Pull to refresh exists only in the home screen web app (standalone).
   The footer shows a version stamp (build time Pacific + commit) to tell whether an update arrived;
   GitHub Pages sends max-age=600, so devices can hold a page for 10 minutes.
-- Groups tab (XC, admins only): the training-group placement from the seasonal training plan doc, computed in the
-  page from the portal data (pace thirds within girls or boys, all ages together; experience counts seasons for any team), with Copy for Sheets and CSV download. gate.js sets window.DH_ROLE before the portal
-  script runs and the tab shows only for 'admin'. It hides a view, not data: coaches can read the same portal data.
-  Not in the claude.ai build (no role there).
 - "This week" tab: build.py reads the latest practice schedule from the club blog (scripts/week_schedule.py: the
   RSS feed for links, then the post page, since the feed is cut off) and adds the tab to both web portals. Nothing is
   saved in the repo. pages.yml rebuilds every 3 hours so a new Sunday post appears on its own; if the blog can't be

@@ -210,7 +210,6 @@ input.tin[aria-invalid="true"]{border-color:#B3261E;box-shadow:inset 0 0 0 1px #
  <button role="tab" aria-selected="false" data-tab="runner">Athletes</button>
  <button role="tab" aria-selected="false" data-tab="meets">Meets</button>
  <button role="tab" aria-selected="false" data-tab="records">Records</button>
- <button role="tab" aria-selected="false" data-tab="groups" id="groupsTab" hidden>Groups</button>
  <button role="tab" aria-selected="false" data-tab="alumni">Alumni</button>
  <button role="tab" aria-selected="false" data-tab="model">Method</button>
 </div></nav>
@@ -255,14 +254,6 @@ input.tin[aria-invalid="true"]{border-color:#B3261E;box-shadow:inset 0 0 0 1px #
  </div>
  <div class="scroll"><table id="xrTable"></table></div>
  <p class="sub" id="xrNote" style="margin-top:10px">These are not official club records, which use actual times on the same course. Equivalents are refit as new results come in, so ranks can shift slightly.</p>
-</section>
-
-<section id="groups" role="tabpanel">
- <h2>Training groups</h2>
- <p class="sub">Admins only. The current roster scored 0 to 100 on three weighted factors: experience 40% (earlier seasons with 2 or more races for any team: none 0, one 50, two 85, three or more 100), age 30% (8 is 0, rising to 100 at 14) and pace 30% (percentile within girls or boys, all ages). Under 35 is novice, 35 to 64 intermediate, 65 and up advanced. Advanced needs age 11 or over and an earlier season; an athlete with no race yet is novice. Track seasons are not in this data. Coaches have the final say.</p>
- <div class="bar" id="grpBar"><button class="chip" id="grpCopy">Copy for Sheets</button><button class="chip" id="grpCsv">Download CSV</button><button class="chip" id="grpCallOnly" aria-pressed="false">Coach's call only</button><span class="sub" id="grpCounts" style="margin:0"></span></div>
- <div class="scroll"><table id="grpTable"></table></div>
- <p class="sub" style="margin-top:10px">Highlighted: a coach's call. Marked only where the level could go either way (a score within 5 of a cutoff, an age that may be a year off), where a limit holds back a score that says advanced, or where the data is too thin to place (no race yet, none in over a year, no sex listed, a possible duplicate).</p>
 </section>
 
 <section id="alumni" role="tabpanel">
@@ -628,76 +619,6 @@ document.querySelectorAll('#xrFilters [data-g]').forEach(b=>b.onclick=()=>{XG=b.
 ['#xrView','#xrSeason','#xrAge'].forEach(q=>$(q).onchange=renderRecordsXC);
 $('#xrActive').onclick=e=>{xrAct=!xrAct;e.currentTarget.setAttribute('aria-pressed',xrAct);renderRecordsXC()};
 renderRecordsXC();
-
-// training groups (admins only): the placement rules from the training plan, applied to the current roster
-const grpLevel=['Novice','Intermediate','Advanced'];
-// weights and cutoffs (tune here): experience is training age, the best guide to how much volume a body is ready for;
-// age is maturity; pace is current fitness, a model estimate that, ranked across ages, already carries some of the age effect
-const GRP_W={exp:.4,age:.3,pace:.3},GRP_CUT={mid:35,adv:65};
-const grpAgeGroup=a=>a==null?null:a<=8?'8U':a<=10?'9-10':a<=12?'11-12':a<=14?'13-14':'15+';
-function trainingGroups(){
- const sy=d=>+d.slice(0,4)-(+d.slice(5,7)<8?1:0),SY=sy(D.meta.as_of),now=new Date(D.meta.as_of+'T12:00:00');   // school-year seasons, Aug to Jul
- const rows=D.runners.filter(r=>r.active).map(r=>{
-  const lv=r.preds.find(p=>p.course===D.meta.ref_course&&Math.abs(p.dist-1.5)<.01),last=r.races.slice().sort((a,b)=>a.date.localeCompare(b.date)).pop();
-  // age: the club's birth date when known, else the portal's estimate, else the last race's age group moved forward by the years since
-  let age=r.age!=null?r.age:null,ag=age!=null?grpAgeGroup(age):null;
-  if(ag==null&&last&&last.ag){const lo={'8U':8,'9-10':9,'11-12':11,'13-14':13,'15+':15}[last.ag];if(lo!=null)ag=grpAgeGroup(lo+(+D.meta.as_of.slice(0,4)-+last.date.slice(0,4)))}
-  const ageSure=!!(r.age_known&&r.age!=null);
-  // earlier seasons with 2+ races for any team or unattached (racing background, not club history); Hawks-only kept for the note
-  const seasons=new Map(),hawk=new Map();r.races.forEach(x=>{const y=sy(x.date);if(y<SY){seasons.set(y,(seasons.get(y)||0)+1);if(!x.team||x.team==='Delta Hawks')hawk.set(y,(hawk.get(y)||0)+1)}});
-  const exp=[...seasons.values()].filter(n=>n>=2).length,expHawks=[...hawk.values()].filter(n=>n>=2).length;
-  const stale=last&&(now-new Date(last.date+'T12:00:00'))/864e5>365;
-  return {r,name:r.name,sex:r.gender==='F'?'Girls':r.gender==='M'?'Boys':'',ag,age,ageSure,pred:lv?lv.pred:null,raced:r.races.length>0,exp,expHawks,stale}});
- (D.meta.roster||[]).filter(x=>!x.id).forEach(x=>rows.push({name:x.name,sex:x.gender==='F'?'Girls':x.gender==='M'?'Boys':'',ag:null,age:null,ageSure:false,pred:null,raced:false,exp:0}));
- const seen=new Map();rows.forEach(o=>{const k=String(o.name).trim().toLowerCase();seen.set(k,(seen.get(k)||0)+1)});
- const groups=new Map();   // pace thirds within girls or boys, all ages together; an athlete with no sex listed is not ranked
- rows.filter(o=>o.pred&&o.raced&&o.sex).forEach(o=>{const k=o.sex;if(!groups.has(k))groups.set(k,[]);groups.get(k).push(o)});
- groups.forEach(list=>{list.sort((a,b)=>a.pred-b.pred);const n=list.length;   // pace percentile within girls or boys, fastest = 100
-  list.forEach((o,i)=>{o.rank=i+1;o.of=n;o.sP=n<2?50:100*(1-i/(n-1))})});
- rows.forEach(o=>{const known=o.age!=null||o.ag!=null;
-  // age as a number: the known or estimated age, else the middle of the projected age group
-  o.ageNum=o.age!=null?o.age:o.ag?{'8U':8,'9-10':9.5,'11-12':11.5,'13-14':13.5,'15+':15}[o.ag]:null;
-  const sA=a=>a==null?0:Math.max(0,Math.min(1,(a-8)/6))*100,sE=e=>[0,50,85,100].at(Math.min(e,3));
-  o.sA=sA(o.ageNum);o.sE=sE(o.exp);if(o.sP==null)o.sP=0;
-  const score=(sa,sp)=>Math.round(GRP_W.exp*o.sE+GRP_W.age*sa+GRP_W.pace*sp);
-  o.score=score(o.sA,o.sP);
-  const why=[],levelOf=(sc,ageNum)=>{let l=sc>=GRP_CUT.adv?2:sc>=GRP_CUT.mid?1:0,w=[];
-   if(l===2&&(ageNum==null||ageNum<11)){l=1;w.push(ageNum==null?'age unknown':'under 11')}if(l===2&&o.exp===0){l=1;w.push('first season')}return [l,w]};
-  let [lvl,w]=levelOf(o.score,o.ageNum);why.push(...w);
-  if(!o.raced||!o.pred){lvl=0;why.length=0;why.push('no race yet')}
-  o.level=lvl;o.why=why;
-  // coach's call: only where an uncertainty or a limit could change the level, or the data is too thin to place
-  const call=[];
-  if(!o.raced||!o.pred)call.push('no race yet: place from practice');
-  else{
-   if([GRP_CUT.mid,GRP_CUT.adv].some(c=>Math.abs(o.score-c)<5)&&[o.score-5,o.score+5].some(sc=>levelOf(sc,o.ageNum)[0]!==lvl))call.push('score near a cutoff');
-   const ageShaky=!known||!o.ageSure;
-   if(ageShaky&&[-1,1].some(d=>{const a=o.ageNum==null?null:o.ageNum+d;return levelOf(score(sA(a),o.sP),a)[0]!==lvl}))call.push(known?'age uncertain':'age unknown');
-   if(why.some(x=>['under 11','first season','age unknown'].includes(x)))call.push('score says advanced, held back by a limit');
-   if(!o.sex)call.push('no sex listed');
-   if(o.stale)call.push('no race in over a year');}
-  if(seen.get(String(o.name).trim().toLowerCase())>1)call.push('possible duplicate');
-  o.call=[...new Set(call)];
-  o.review=[!o.raced?'':!known?'age unknown':!o.ageSure?'age estimated':'',o.raced&&!o.sex?'sex not listed, pace not ranked':'',
-   o.stale?'last race over a year ago':'',o.expHawks!=null&&Math.min(o.exp,3)>Math.min(o.expHawks,3)?'includes other teams':'',
-   o.of&&o.of<3?'fewer than 3 to rank':'',seen.get(String(o.name).trim().toLowerCase())>1?'name listed twice, check for a duplicate':''].filter(Boolean)});
- return rows.sort((a,b)=>b.score-a.score||b.level-a.level||(a.pred||1e9)-(b.pred||1e9))}   // highest score first; ties: higher level, then faster
-const GRP_COLS=['Name','Level',"Coach's call",'Score','Experience','Age','Pace','Sex','Age group','Expected 1.5 mi','Pace rank','Earlier seasons','Notes'];
-const grpRow=o=>[o.name,grpLevel[o.level],o.call.join('; '),o.score,Math.round(o.sE),Math.round(o.sA),Math.round(o.sP),o.sex,o.ag||'',o.pred?fmt(o.pred):'',o.rank?`${o.rank} of ${o.of}`:'',o.exp,o.why.concat(o.review).join('; ')];
-let grpCallOnly=false;
-function renderGroups(){const all=trainingGroups(),c=[0,0,0];all.forEach(o=>c[o.level]++);const calls=all.filter(o=>o.call.length).length,rows=grpCallOnly?all.filter(o=>o.call.length):all;
- $('#grpCounts').textContent=`${all.length} athletes: ${c[2]} advanced, ${c[1]} intermediate, ${c[0]} novice. ${calls} for a coach's call.`;
- $('#grpTable').innerHTML='<tr>'+GRP_COLS.map((h,i)=>`<th${[3,4,5,6,9,10,11].includes(i)?' class="n"':''}>${h}</th>`).join('')+'</tr>'+
-  rows.map(o=>`<tr${o.call.length?' class="hawk"':''}>`+grpRow(o).map((v,i)=>`<td${[3,4,5,6,9,10,11].includes(i)?' class="n"':i===2||i===12?' style="white-space:normal;min-width:12em"':''}>${i===0&&o.r?`<a href="#" data-ath="${esc(o.r.id)}">${esc(v)}</a>`:esc(v)}</td>`).join('')+'</tr>').join('');
- document.querySelectorAll('#grpTable a[data-ath]').forEach(a=>a.onclick=e=>{e.preventDefault();openRunner(a.dataset.ath)});
- const safe=v=>{v=String(v);return /^[=+\-@]/.test(v)?"'"+v:v};   // a cell starting with = + - @ would run as a formula in a spreadsheet
- const table=(sep,q)=>[GRP_COLS].concat(rows.map(grpRow)).map(r=>r.map(v=>q(safe(v))).join(sep)).join('\n');
- $('#grpCopy').onclick=async e=>{const b=e.currentTarget;try{await navigator.clipboard.writeText(table('\t',v=>String(v).replace(/[\t\n]/g,' ')));b.textContent='Copied'}catch(x){b.textContent='Copy failed'}setTimeout(()=>b.textContent='Copy for Sheets',2000)};
- $('#grpCsv').onclick=()=>{const csv=table(',',v=>{v=String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}),a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`hawks-training-groups-${D.meta.as_of}.csv`;document.body.appendChild(a);a.click();a.remove()}}
-// shown only to admins on the web portal (the sign-in gate sets the role); coaches can read the same data, so this hides a view, not data
-$('#grpCallOnly').onclick=e=>{grpCallOnly=!grpCallOnly;e.currentTarget.setAttribute('aria-pressed',grpCallOnly);renderGroups()};
-if(window.DH_ROLE==='admin'){$('#groupsTab').hidden=false;try{renderGroups()}catch(e){$('#grpTable').innerHTML='<tr><td class="empty">Could not build the groups.</td></tr>'}}
 
 // model
 const M=D.meta,bt=M.backtest,pct=v=>(v*100).toFixed(1)+'%';
