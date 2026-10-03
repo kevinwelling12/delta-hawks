@@ -259,7 +259,7 @@ input.tin[aria-invalid="true"]{border-color:#B3261E;box-shadow:inset 0 0 0 1px #
 
 <section id="groups" role="tabpanel">
  <h2>Training groups</h2>
- <p class="sub">Admins only. The 2026 roster placed by the rules in the training plan: up to 2 points each for age, pace and experience; 0 to 2 novice, 3 to 4 intermediate, 5 to 6 advanced. Advanced needs age 11 or over, a first season is at most intermediate, and an athlete with no race yet is novice. Pace is ranked within girls or boys across all ages, so age counts once, through its own points. Experience counts earlier cross country seasons with 2 or more Hawks races (track seasons are not in this data). Coaches have the final say.</p>
+ <p class="sub">Admins only. The 2026 roster placed by the rules in the training plan: up to 2 points each for age, pace and experience; 0 to 2 novice, 3 to 4 intermediate, 5 to 6 advanced. Advanced needs age 11 or over, a first season is at most intermediate, and an athlete with no race yet is novice. Pace is ranked within girls or boys across all ages, so age counts once, through its own points. Experience counts earlier seasons with 2 or more races for any team, including schools and unattached (track seasons are not in this data). Coaches have the final say.</p>
  <div class="bar" id="grpBar"><button class="chip" id="grpCopy">Copy for Sheets</button><button class="chip" id="grpCsv">Download CSV</button><span class="sub" id="grpCounts" style="margin:0"></span></div>
  <div class="scroll"><table id="grpTable"></table></div>
  <p class="sub" style="margin-top:10px">Highlighted: within 5 seconds of someone in another pace third, worth a coach's look. Notes also flag ages estimated from race listings.</p>
@@ -636,9 +636,10 @@ function trainingGroups(){
  const rows=D.runners.filter(r=>r.active).map(r=>{
   const lv=r.preds.find(p=>p.course===D.meta.ref_course&&Math.abs(p.dist-1.5)<.01),last=r.races.slice().sort((a,b)=>a.date.localeCompare(b.date)).pop();
   const age=r.age!=null?r.age:null,ag=age!=null?grpAgeGroup(age):last&&last.ag||null,ageSure=!!(r.age_known&&r.age!=null);
-  const seasons=new Map();r.races.forEach(x=>{if(x.date<'2026-08-01'&&(!x.team||x.team==='Delta Hawks')){const y=x.date.slice(0,4);seasons.set(y,(seasons.get(y)||0)+1)}});
-  const exp=[...seasons.values()].filter(n=>n>=2).length;
-  return {r,name:r.name,sex:r.gender==='F'?'Girls':'Boys',ag,age,ageSure,pred:lv?lv.pred:null,raced:r.races.length>0,exp}});
+  // earlier seasons with 2+ races for any team or unattached (racing background, not club history); Hawks-only kept for the note
+  const seasons=new Map(),hawk=new Map();r.races.forEach(x=>{if(x.date<'2026-08-01'){const y=x.date.slice(0,4);seasons.set(y,(seasons.get(y)||0)+1);if(!x.team||x.team==='Delta Hawks')hawk.set(y,(hawk.get(y)||0)+1)}});
+  const exp=[...seasons.values()].filter(n=>n>=2).length,expHawks=[...hawk.values()].filter(n=>n>=2).length;
+  return {r,name:r.name,sex:r.gender==='F'?'Girls':'Boys',ag,age,ageSure,pred:lv?lv.pred:null,raced:r.races.length>0,exp,expHawks}});
  (D.meta.roster||[]).filter(x=>!x.id).forEach(x=>rows.push({name:x.name,sex:x.gender==='F'?'Girls':x.gender==='M'?'Boys':'',ag:null,age:null,ageSure:false,pred:null,raced:false,exp:0}));
  const groups=new Map();   // pace thirds within girls or boys, all ages together
  rows.filter(o=>o.pred&&o.raced).forEach(o=>{const k=o.sex;if(!groups.has(k))groups.set(k,[]);groups.get(k).push(o)});
@@ -650,7 +651,7 @@ function trainingGroups(){
   let lvl=o.total>=5?2:o.total>=3?1:0,why=[];
   if(!o.raced||!o.pred){lvl=0;why.push('no race yet')}
   else{if(lvl===2&&!(o.pAge>=1)){lvl=1;why.push('under 11')}if(lvl===2&&o.exp===0){lvl=1;why.push('first season')}}
-  o.level=lvl;o.why=why;o.review=[o.near?'near a pace cutoff':'',o.raced&&!o.ageSure?'age estimated':'',o.of&&o.of<3?'fewer than 3 to rank':''].filter(Boolean)});
+  o.level=lvl;o.why=why;o.review=[o.near?'near a pace cutoff':'',o.raced&&!o.ageSure?'age estimated':'',o.expHawks!=null&&Math.min(o.exp,2)>Math.min(o.expHawks,2)?'includes other teams':'',o.of&&o.of<3?'fewer than 3 to rank':''].filter(Boolean)});
  return rows.sort((a,b)=>b.total-a.total||b.level-a.level||(a.pred||1e9)-(b.pred||1e9))}   // most points first; ties: higher level, then faster
 const GRP_COLS=['Name','Level','Sex','Age group','Expected 1.5 mi','Pace rank','Earlier seasons','Age pts','Pace pts','Experience pts','Total','Notes'];
 const grpRow=o=>[o.name,grpLevel[o.level],o.sex,o.ag||'',o.pred?fmt(o.pred):'',o.rank?`${o.rank} of ${o.of}`:'',o.exp,o.pAge,o.pPace,o.pExp,o.total,o.why.concat(o.review).join('; ')];
