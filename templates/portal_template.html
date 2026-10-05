@@ -11,12 +11,12 @@
 :root{
  --bg:#FFFFFF;--card:#FFFFFF;--panel:#F4F4F4;--ink:#272727;--muted:#5E5E5E;--faint:#999999;--line:#E4E4E4;
  --head:#272727;--hawk:#EDF737;--hawk-ink:#272727;--hawk-wash:rgba(237,247,55,.32);--hawk-row:#F9FCBF;--delta:#3A3A3A;
- --band-edge:#272727;--ctl:#858585;--sel-bg:#272727;--sel-fg:#EDF737;--focus:#272727;--mark:#272727;--good:#1F7A48;
+ --band-edge:#272727;--ctl:#858585;--sel-bg:#272727;--sel-fg:#EDF737;--focus:#272727;--mark:#272727;--good:#1F7A48;--bad:#B3261E;
  --cond:"Barlow Condensed","DIN Condensed","Arial Narrow",sans-serif;--body:"Figtree",Avenir,"Avenir Next","Segoe UI",system-ui,sans-serif;
  --pad:16px;
  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1C1C1C;--card:#1C1C1C;--panel:#272727;--ink:#F2F2F2;--muted:#ABABAB;--faint:#707070;--line:#333333;--head:#111111;--delta:#E6E6E6;--good:#5CC98C;--hawk-wash:rgba(237,247,55,.14);--hawk-row:#393B20;--band-edge:transparent;--ctl:#7A7A7A;--sel-bg:#EDF737;--sel-fg:#272727;--focus:#EDF737;--mark:#EDF737;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#1C1C1C;--card:#1C1C1C;--panel:#272727;--ink:#F2F2F2;--muted:#ABABAB;--faint:#707070;--line:#333333;--head:#111111;--delta:#E6E6E6;--good:#5CC98C;--hawk-wash:rgba(237,247,55,.14);--hawk-row:#393B20;--band-edge:transparent;--ctl:#7A7A7A;--sel-bg:#EDF737;--sel-fg:#272727;--focus:#EDF737;--mark:#EDF737;color-scheme:dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1C1C1C;--card:#1C1C1C;--panel:#272727;--ink:#F2F2F2;--muted:#ABABAB;--faint:#707070;--line:#333333;--head:#111111;--delta:#E6E6E6;--good:#5CC98C;--bad:#F2877E;--hawk-wash:rgba(237,247,55,.14);--hawk-row:#393B20;--band-edge:transparent;--ctl:#7A7A7A;--sel-bg:#EDF737;--sel-fg:#272727;--focus:#EDF737;--mark:#EDF737;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1C1C1C;--card:#1C1C1C;--panel:#272727;--ink:#F2F2F2;--muted:#ABABAB;--faint:#707070;--line:#333333;--head:#111111;--delta:#E6E6E6;--good:#5CC98C;--bad:#F2877E;--hawk-wash:rgba(237,247,55,.14);--hawk-row:#393B20;--band-edge:transparent;--ctl:#7A7A7A;--sel-bg:#EDF737;--sel-fg:#272727;--focus:#EDF737;--mark:#EDF737;color-scheme:dark}
 @media (min-width:720px){:root{--pad:20px}}
 *,*::before,*::after{box-sizing:inherit}
 html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 56px)}
@@ -196,6 +196,29 @@ details.deep>summary{font:700 22px/1.15 var(--cond);letter-spacing:.01em}
 @media (max-width:420px){.list .lt{font-size:26px}}
 .prb{display:inline-block;vertical-align:.3em;margin-right:8px;padding:3px 6px 2px;border-radius:4px;background:var(--sel-bg);color:var(--sel-fg);font:700 14px/1 var(--cond);letter-spacing:.06em;text-decoration:none}
 .prb.old{background:transparent;color:var(--faint);box-shadow:inset 0 0 0 1.5px var(--line)}
+/* meet report */
+[hidden]{display:none!important}
+.rep-sum{font-size:17px;line-height:1.55;max-width:68ch;margin:0 0 10px}
+.rep-two{display:grid;gap:0 32px}
+@media (min-width:860px){.rep-two{grid-template-columns:1.3fr 1fr}}
+.rep-two>div{min-width:0}
+.rb{display:inline-block;margin:2px 4px 0 0;padding:2px 6px 1px;border-radius:4px;font:700 12px/1.2 var(--cond);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;box-shadow:inset 0 0 0 1.5px var(--line);color:var(--ink)}
+.rb.pb{background:var(--sel-bg);color:var(--sel-fg);box-shadow:none}
+.rb.cb{box-shadow:inset 0 0 0 1.5px var(--mark)}
+.rb.rec{background:var(--hawk);color:#272727;box-shadow:none}
+.rb.top{background:var(--panel);color:var(--good);box-shadow:none}
+.rb.new{box-shadow:none;outline:1.5px dashed var(--faint);outline-offset:-1.5px;color:var(--muted)}
+.list .lt.pos,.pos{color:var(--good)}.list .lt.neg,.neg{color:var(--bad)}
+.vb{position:relative;width:96px;height:12px}
+.vb::before{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--faint)}
+.vb i{position:absolute;top:2px;height:8px;border-radius:2px}
+.vb i.p{left:50%;background:var(--good)}.vb i.m{right:50%;background:var(--bad)}
+.rep-race{margin-top:22px}
+.rep-race h4{margin:0;font:700 19px/1.2 var(--cond);letter-spacing:.01em}
+.rep-race .rh{display:flex;flex-wrap:wrap;gap:2px 14px;align-items:baseline;margin-bottom:8px}
+.rep-race .rh span{color:var(--muted);font-size:13px}
+.rep-race .pk{color:var(--muted);font-size:13px;margin:6px 0 0}
+.rep-trend svg text{fill:var(--muted);font:500 12px var(--body)}
 input.tin{min-height:42px;width:6.5em;border:1px solid var(--ctl);border-radius:6px;padding:0 12px;font-size:16px;font-weight:600;background:var(--bg);font-variant-numeric:tabular-nums}
 input.tin[aria-invalid="true"]{border-color:#B3261E;box-shadow:inset 0 0 0 1px #B3261E}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -234,12 +257,21 @@ input.tin[aria-invalid="true"]{border-color:#B3261E;box-shadow:inset 0 0 0 1px #
 </section>
 
 <section id="meets" role="tabpanel">
+ <div class="bar" id="meetView">
+  <button class="chip" data-v="report" aria-pressed="true">Report</button>
+  <button class="chip" data-v="results" aria-pressed="false">Results</button></div>
+ <div id="repView">
+  <div class="bar"><label for="repSel" class="sub" style="margin:0">Meet</label><select id="repSel"></select></div>
+  <div id="repBody"></div>
+ </div>
+ <div id="resView" hidden>
  <h2>Meet results</h2>
  <div class="bar"><select id="raceSel" aria-label="Race"></select>
   <button class="chip" id="hawksOnly" aria-pressed="false">Hawks only</button></div>
  <div id="raceFx" style="margin-bottom:12px"></div>
  <p class="sub" id="raceNote"></p>
  <div class="scroll"><table id="raceTable"></table></div>
+ </div>
 </section>
 
 <section id="records" role="tabpanel">
@@ -619,6 +651,125 @@ document.querySelectorAll('#xrFilters [data-g]').forEach(b=>b.onclick=()=>{XG=b.
 ['#xrView','#xrSeason','#xrAge'].forEach(q=>$(q).onchange=renderRecordsXC);
 $('#xrActive').onclick=e=>{xrAct=!xrAct;e.currentTarget.setAttribute('aria-pressed',xrAct);renderRecordsXC()};
 renderRecordsXC();
+// meet report: one Hawks meet at a glance for the staff. Expected times come from the pipeline (D.reports, written by
+// meet_reports.py): each Hawk's projection on the morning of the meet, refit on earlier races only, shifted by how the rest
+// of the race ran against their own projections, with its 80% range. Everything else is computed here from the results.
+const REP=(D.reports&&D.reports.x)||{};
+const isClub=x=>!x.team||x.team==='Delta Hawks'||x.team==='Unattached';
+const repExp=x=>{const s=clockSecs(x.time);if(s==null)return null;const v=REP[`${x.date}|${x.meet}|${x.race}|${x.place}|${Math.floor(s+1e-6)}`];return v?{exp:v[0],lo:v[1],hi:v[2]}:null};
+const RM=new Map();D.runners.forEach(r=>r.races.forEach(x=>{if(!isClub(x))return;const k=x.date+'|'+x.meet;
+ if(!RM.has(k))RM.set(k,{key:k,date:x.date,meet:x.meet,course:x.course,list:[]});RM.get(k).list.push({r,x})}));
+const repMeets=[...RM.values()].sort((a,b)=>b.date.localeCompare(a.date)||a.meet.localeCompare(b.meet));
+const seasonOf=d=>+d.slice(0,4)-(+d.slice(5,7)<8?1:0);
+let RES=null;const resBy=k=>{if(!RES){RES=new Map();D.results.forEach(y=>{const q=y.date+'|'+y.meet+'|'+y.race;if(!RES.has(q))RES.set(q,[]);RES.get(q).push(y)})}return RES.get(k)||[]};
+const sgnP=v=>Math.abs(v)<.05?'0.0%':(v>0?'+':'−')+Math.abs(v).toFixed(1)+'%';
+// one Hawk's race: expectation, PB, course best, record, first race, top 10
+function repRow(r,x){
+ const s=clockSecs(x.time),e=repExp(x),o={r,x,s,e,pct:e?100*(e.exp-s)/e.exp:null};
+ o.fast=!!e&&s<e.lo;o.slow=!!e&&s>e.hi;
+ const before=r.races.filter(y=>y.date<x.date);o.first=!before.length;
+ const eq=before.filter(y=>y.equiv_day>0);o.pb=x.equiv_day>0&&eq.length>0&&eq.every(y=>x.equiv_day<y.equiv_day);
+ const d=raceDist(x),same=d?before.filter(y=>y.course===x.course&&raceDist(y)&&Math.abs(raceDist(y)-d)<.02):[];
+ o.cb=same.length>0&&s!=null&&same.every(y=>{const t=clockSecs(y.time);return t==null||s<t});
+ o.top=+x.place<=10;
+ // unofficial club record: this race is the athlete's best in its age group, and it ranks in the top 3 all-time
+ const ag=xrAge(x);if(ag&&x.equiv_day>0){const best=new Map();
+  XR.forEach(q=>{if(q.r.gender!==r.gender||q.ag!==ag)return;const b=best.get(q.r.id);if(!b||q.x.equiv_day<b.x.equiv_day)best.set(q.r.id,q)});
+  const mine=best.get(r.id);if(mine&&mine.x===x){const rank=[...best.values()].filter(q=>q.x.equiv_day<x.equiv_day).length+1;
+   if(rank<=3)o.rec=`#${rank} all-time, ${ag} ${r.gender==='F'?'girls':'boys'}`}}
+ // below range at their previous club race too
+ const prev=before.filter(isClub).pop(),pe=prev&&repExp(prev);o.slow2=o.slow&&!!pe&&clockSecs(prev.time)>pe.hi;
+ return o}
+const repBadges=o=>[o.rec&&'<span class="rb rec">Record</span>',o.pb&&'<span class="rb pb">PB</span>',o.cb&&'<span class="rb cb">Course best</span>',
+ o.top&&'<span class="rb top">Top 10</span>',o.first&&'<span class="rb new">First race</span>'].filter(Boolean).join('');
+// unofficial team score from a full field: teams with 5+ finishers score, each team's first 7 hold places, top 5 count,
+// 6th breaks ties. Unattached runners and short teams are taken out of the places.
+function teamScore(k){const rows=resBy(k);if(!rows.length||rows[0].full!=='Y')return null;
+ const tm=y=>y.team&&!/unattached/i.test(y.team)?y.team:null,cnt=new Map();rows.forEach(y=>{const t=tm(y);if(t)cnt.set(t,(cnt.get(t)||0)+1)});
+ const hawks=cnt.get('Delta Hawks')||0;if(hawks<5)return {hawks};
+ const seen=new Map(),T=new Map();let pl=0;
+ rows.filter(y=>tm(y)&&cnt.get(tm(y))>=5).sort((a,b)=>a.place-b.place).forEach(y=>{const t=tm(y),n=(seen.get(t)||0)+1;seen.set(t,n);if(n>7)return;pl++;
+  if(!T.has(t))T.set(t,{t,pts:0,six:1e9});const o=T.get(t);if(n<=5)o.pts+=pl;else if(n===6)o.six=pl});
+ const list=[...T.values()].sort((a,b)=>a.pts-b.pts||a.six-b.six),i=list.findIndex(o=>o.t==='Delta Hawks');
+ return {hawks,place:i+1,of:list.length,pts:list[i].pts}}
+function renderReport(){
+ const m=RM.get($('#repSel').value);if(!m){$('#repBody').innerHTML='<p class="sub">No Hawks meets yet.</p>';return}
+ const rows=m.list.map(({r,x})=>repRow(r,x)),rated=rows.filter(o=>o.e),beat=rated.filter(o=>o.pct>0);
+ const med=(a=>{if(!a.length)return null;a=[...a].sort((p,q)=>p-q);const h=a.length>>1;return a.length%2?a[h]:(a[h-1]+a[h])/2});
+ const md0=med(rated.map(o=>o.pct)),pbs=rows.filter(o=>o.pb),cbs=rows.filter(o=>o.cb),recs=rows.filter(o=>o.rec),tops=rows.filter(o=>o.top),firsts=rows.filter(o=>o.first);
+ const raceKeys=[...new Set(rows.map(o=>o.x.date+'|'+o.x.meet+'|'+o.x.race))];
+ const T=D.meta.meet_temps[m.key],days=raceKeys.map(k=>{const o=rows.find(q=>q.x.date+'|'+q.x.meet+'|'+q.x.race===k);try{const f=raceF(o.x);return f&&f.day}catch(e){return null}}).filter(Boolean);
+ const day=days.length?100*(days.reduce((a,b)=>a+b)/days.length-1):null,heat=T!=null?100*(heatF(T)-1):null;
+ const best=[...rated].sort((a,b)=>b.pct-a.pct)[0];
+ const sum=`${rows.length} Hawk${rows.length>1?'s':''} raced at ${m.meet}${raceKeys.length>1?` in ${raceKeys.length} races`:''}. `
+  +(rated.length?`${beat.length} of ${rated.length} with a projection beat it, and the median Hawk ran ${Math.abs(md0).toFixed(1)}% ${md0>=0?'faster':'slower'} than expected after allowing for how the whole race ran. `:'')
+  +(T!=null?`It was ${T}°F at the start${heat>=.5?`, which cost about ${heat.toFixed(1)}%`:''}${day!=null&&Math.abs(day)>=.5?`, and the field ran ${Math.abs(day).toFixed(1)}% ${day>0?'slow':'fast'} beyond course and heat`:''}. `:'')
+  +`${pbs.length} personal best${pbs.length===1?'':'s'}, ${cbs.length} course best${cbs.length===1?'':'s'}${recs.length?`, ${recs.length} race${recs.length>1?'s':''} on the unofficial records list`:''}, ${tops.length} top-10 finish${tops.length===1?'':'es'}. `
+  +(firsts.length?`${firsts.length} ran their first race. `:'')+(best&&best.pct>0?`Best race against expectation: ${best.r.name} (${sgnP(best.pct)}).`:'');
+ const kv=[rated.length?[`${beat.length}/${rated.length}`,`beat their projection (a typical meet is about half)`]:null,
+  md0!=null?[sgnP(md0),'median Hawk vs expected, with how the race ran taken out']:null,
+  [pbs.length,'personal bests (1.5 mi equivalent)'],[cbs.length,'course bests'],[tops.length,'top-10 finishes'],
+  day!=null?[sgnP(-day),`how fast the field ran beyond course and heat${T!=null?` (${T}°F)`:''}`]:null].filter(Boolean);
+ // highlights, best first: records, faster than the range, PBs, top 10, first races
+ const used=new Set(),hl=[];const add=(o,what)=>{if(used.has(o))return;used.add(o);hl.push({o,what})};
+ const sx=o=>`${esc(o.x.race)}: ${esc(o.x.time)}`;
+ recs.forEach(o=>add(o,`${sx(o)}. ${o.rec} (unofficial).`));
+ rated.filter(o=>o.fast).sort((a,b)=>b.pct-a.pct).forEach(o=>add(o,`${sx(o)} vs ${fmt(o.e.exp)} expected, faster than the likely range.`));
+ pbs.forEach(o=>add(o,`${sx(o)}, new personal best${o.cb?' and course best':''}.`));
+ cbs.forEach(o=>add(o,`${sx(o)}, course best.`));
+ tops.forEach(o=>add(o,`${sx(o)}, ${nth(+o.x.place)} of ${o.x.field}.`));
+ firsts.forEach(o=>add(o,`${sx(o)}, first race, ${nth(+o.x.place)} of ${o.x.field}.`));
+ const li=(o,what,cls)=>`<li><span class="ln"><a href="#" data-ath="${esc(o.r.id)}">${esc(o.r.name)}</a></span><span class="lm">${repBadges(o)}</span><span class="lm">${what}</span><span class="lt ${cls}">${o.pct==null?'':sgnP(o.pct)}</span></li>`;
+ const slow=rated.filter(o=>o.slow).sort((a,b)=>a.pct-b.pct);
+ // race by race, in the order the meet listed them
+ const races=raceKeys.map(k=>{const hs=rows.filter(o=>o.x.date+'|'+o.x.meet+'|'+o.x.race===k).sort((a,b)=>a.x.place-b.x.place),x0=hs[0].x,res=resBy(k);
+  const win=res.length?res.reduce((a,b)=>+a.place<=+b.place?a:b):null,ts=teamScore(k),secs=hs.map(o=>o.s).filter(v=>v!=null),n5=Math.min(5,secs.length);
+  const team=ts?(ts.place?`Hawks ${nth(ts.place)} of ${ts.of} teams, ${ts.pts} points (unofficial)`:`no team score (${ts.hawks} Hawk${ts.hawks===1?'':'s'})`):'';
+  return `<div class="rep-race"><div class="rh"><h4>${esc(x0.race)}</h4><span>${x0.field} finishers${win?`, winner ${esc(win.time)}`:''}${team?' · '+team:''}</span></div>
+  <div class="scroll"><table><tr><th class="n">Pl</th><th>Hawk</th><th class="n">Time</th><th class="n lg">Expected</th><th class="n">vs exp</th><th class="lg" aria-label="Difference, ±5% full width"></th><th class="n lg">Beat</th></tr>
+  ${hs.map(o=>{const w=o.pct==null?0:Math.min(Math.abs(o.pct),5)/5*50;return `<tr><td class="n">${o.x.place}</td><td class="w"><a href="#" data-ath="${esc(o.r.id)}">${esc(o.r.name)}</a><span class="rm">${repBadges(o)}</span></td>
+  <td class="n">${esc(o.x.time)}</td><td class="n lg">${o.e?fmt(o.e.exp):''}</td><td class="n ${o.pct>0?'pos':o.pct<0?'neg':''}">${o.pct==null?'':sgnP(o.pct)}</td>
+  <td class="lg">${o.pct==null?'':`<div class="vb" aria-hidden="true"><i class="${o.pct>=0?'p':'m'}" style="width:${w.toFixed(1)}%"></i></div>`}</td><td class="n lg">${o.x.pct!=null?Math.round(o.x.pct)+'%':''}</td></tr>`}).join('')}</table></div>
+  ${n5>=2?`<p class="pk">Hawks pack: ${fmt(Math.max(...secs.slice(0,n5))-Math.min(...secs))} from 1st to ${nth(n5)} Hawk.</p>`:''}</div>`}).join('');
+ // season trend: the median Hawk vs expected at each meet this season
+ const sy=seasonOf(m.date),pts=repMeets.filter(q=>seasonOf(q.date)===sy).map(q=>{const v=q.list.map(({r,x})=>{const e=repExp(x),s=clockSecs(x.time);return e&&s!=null?100*(e.exp-s)/e.exp:null}).filter(v=>v!=null);
+  return {q,v:med(v),n:v.length}}).filter(p=>p.n>=3).reverse();
+ const trend=pts.length>=2?(()=>{const nar=innerWidth<600,W=nar?360:640,H=210,L=44,R=16,T0=18,B=40,lim=Math.max(3,Math.ceil(Math.max(...pts.map(p=>Math.abs(p.v)))));
+  const y=v=>T0+(lim-v)/(2*lim)*(H-T0-B),x=i=>L+(i+.5)*(W-L-R)/pts.length;let g='';
+  [-lim,0,lim].forEach(v=>g+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(${v?'--line':'--faint'})"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${v>0?'+':v<0?'−':''}${Math.abs(v)}%</text>`);
+  g+=`<polyline fill="none" stroke="var(--faint)" stroke-width="1.5" points="${pts.map((p,i)=>x(i)+','+y(p.v)).join(' ')}"/>`;
+  pts.forEach((p,i)=>{const cur=p.q===m,lab=p.q.meet.length>14?p.q.meet.slice(0,13)+'…':p.q.meet;
+   g+=`<circle cx="${x(i)}" cy="${y(p.v)}" r="${cur?7:5}" fill="${cur?'var(--hawk)':p.v>=0?'var(--good)':'var(--bad)'}" stroke="var(--ink)" stroke-width="${cur?1.5:0}"/>
+   <text x="${x(i)}" y="${y(p.v)-11}" text-anchor="middle" style="fill:var(--ink);font-weight:700">${p.v>0?'+':p.v<0?'−':''}${Math.abs(p.v).toFixed(1)}</text>`;
+   const every=Math.ceil(pts.length/(nar?4:8));if(i%every===0||cur)g+=`${!nar||pts.length<=4?`<text x="${x(i)}" y="${H-22}" text-anchor="middle">${esc(lab)}</text>`:''}<text x="${x(i)}" y="${H-7}" text-anchor="middle">${md(p.q.date)}</text>`});
+  return `<h3>${sy} season so far</h3><p class="sub">The median Hawk against expected at each meet, with how each race ran taken out. Above the line means the team ran faster than projected.</p>
+  <div class="chart rep-trend"><svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Median Hawk result against expected by meet">${g}</svg></div>`})():'';
+ // next meet on the schedule, shown on the latest report
+ const nx=m===repMeets[0]?[...sched].sort((a,b)=>a.date.localeCompare(b.date)).find(q=>q.date>m.date):null;
+ const elig=nx?new Set(D.runners.filter(r=>r.active&&(r.upcoming||[]).some(u=>u.date===nx.date&&u.meet===nx.meet)).map(r=>r.id)).size:0;
+ $('#repBody').innerHTML=`<h2>${esc(m.meet)}</h2>
+ <p class="sub">${fdate(m.date)} at ${esc(courseShort(m.course))}${T!=null?`, ${T}°F at the start`:''}.</p>
+ <p class="rep-sum" id="repSum">${esc(sum)}</p>
+ <div class="bar"><button class="chip" id="repCopy" type="button">Copy summary</button><span class="sub" id="repCopied" role="status" style="margin:0"></span></div>
+ ${rated.length?'':`<p class="note">No expected times for this meet yet. They are added when the model runs (meet_reports.py), for meets since the start of last season.</p>`}
+ <div class="kv">${kv.map(([b,s])=>`<div><b>${b}</b><span>${s}</span></div>`).join('')}</div>
+ <div class="rep-two"><div><h3>Highlights</h3><ul class="list">${hl.length?hl.map(({o,what})=>li(o,what,o.pct>0?'pos':o.pct<0?'neg':'')).join(''):'<li><span class="lm">No PBs, course bests or standout races at this meet.</span></li>'}</ul></div>
+ ${rated.length?`<div><h3>Check in with</h3><p class="sub">Slower than their likely range, with how the race ran taken out. Often a cramp, a fall or a cold, so ask before reading anything into it. Coaches only.</p>
+ <ul class="list">${slow.length?slow.map(o=>li(o,`${sx(o)} vs ${fmt(o.e.exp)} expected (range ${fmt(o.e.lo)} to ${fmt(o.e.hi)}).${o.slow2?' Second club race in a row below range.':''}`,'neg')).join(''):'<li><span class="lm">Nobody ran slower than their range.</span></li>'}</ul></div>`:''}</div>
+ <h3>Race by race</h3><p class="sub">Expected is the projection each Hawk carried into the meet, shifted by how the rest of the race ran against theirs, so a hot or muddy day doesn't count against anyone. Beat is the share of the field they finished ahead of.</p>${races}
+ ${trend}
+ ${nx?`<h3>Next up</h3><p>${esc(nx.meet)}, ${fdate(nx.date)} at ${esc(courseShort(nx.course))}. ${elig} Hawk${elig===1?'':'s'} on the ${D.meta.as_of.slice(0,4)} roster with an expected time there${nx.temp?`, ${nx.temp.kind==='forecast'?'forecast':'typically'} ${nx.temp.f}°F at the start`:''}. Expected times and places are on the Projections tab.</p>`:''}`;
+ document.querySelectorAll('#repBody a[data-ath]').forEach(a=>a.onclick=e=>{e.preventDefault();openRunner(a.dataset.ath)});
+ $('#repCopy').onclick=()=>{const done=()=>$('#repCopied').textContent='Copied',sel=()=>{const g=document.createRange();g.selectNodeContents($('#repSum'));const w=getSelection();w.removeAllRanges();w.addRange(g);$('#repCopied').textContent='Selected. Copy it from the menu.'};
+  try{navigator.clipboard.writeText(sum).then(done,sel)}catch(e){sel()}};
+}
+$('#repSel').innerHTML=repMeets.map(q=>`<option value="${esc(q.key)}">${fdate(q.date)}, ${esc(q.meet)}</option>`).join('');
+$('#repSel').onchange=renderReport;
+function meetView(v){document.querySelectorAll('#meetView [data-v]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v));
+ $('#repView').hidden=v!=='report';$('#resView').hidden=v==='report';try{localStorage.setItem('dh_meetview',v)}catch(e){}}
+document.querySelectorAll('#meetView [data-v]').forEach(b=>b.onclick=()=>meetView(b.dataset.v));
+try{renderReport()}catch(e){$('#repBody').innerHTML='<p class="sub">The report could not be built for this meet.</p>';console.error(e)}
+try{meetView(localStorage.getItem('dh_meetview')==='results'?'results':'report')}catch(e){meetView('report')}
 
 // model
 const M=D.meta,bt=M.backtest,pct=v=>(v*100).toFixed(1)+'%';

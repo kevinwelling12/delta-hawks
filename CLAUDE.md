@@ -36,5 +36,12 @@ the sibling folder ../delta-hawks (private, not in git; read its CLAUDE.md for t
   RSS feed for links, then the post page, since the feed is cut off) and adds the tab to both web portals. Nothing is
   saved in the repo. pages.yml rebuilds every 3 hours so a new Sunday post appears on its own; if the blog can't be
   read the pages build without the tab. `python3 build.py --no-schedule` skips it. Not in the claude.ai build.
+- Meet report (XC Meets tab, Report view, the default; Results is the old race table): one Hawks club meet at a glance
+  for the staff. Expected times come from the pipeline's scripts/meet_reports.py as D.reports = {v, since, x: {"date|meet|
+  race|place|floor(seconds)": [expected, lo, hi]}}: the projection on the morning of the meet (strict refit), shifted by the
+  median of how the rest of the race ran against their own projections, with the 80% range. Without D.reports the report
+  still shows PBs, course bests, records, team scores and the day, with a note. Team scores are unofficial (full fields,
+  teams of 5+, 6th and 7th displace). "Check in with" lists Hawks slower than their range: keep it coaches only if the
+  'family' role is ever added.
 - Don't call db.settings() with long-polling options: this SDK auto-detects by default and throws if forced.
 - Kevin prefers plain, direct writing: no em dashes, no filler.
