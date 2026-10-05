@@ -655,10 +655,13 @@ renderRecordsXC();
 // meet_reports.py): each Hawk's projection on the morning of the meet, refit on earlier races only, shifted by how the rest
 // of the race ran against their own projections, with its 80% range. Everything else is computed here from the results.
 const REP=(D.reports&&D.reports.x)||{};
-// only athletes on the active roster, and only their races for the Delta Hawks (not school teams or unattached)
-const isClub=x=>!x.team||x.team==='Delta Hawks';
+// who counts in a report: whoever ran for the Delta Hawks in that race, by the results row at their place (the athlete's
+// own record as a fallback), so past Hawks show at past meets but not at later meets they ran for another team.
+// Unattached counts only for athletes on the active roster.
+let RT=null;const resTeam=x=>{if(!RT){RT=new Map();D.results.forEach(y=>RT.set(y.date+'|'+y.meet+'|'+y.race+'|'+y.place,y.team))}return RT.get(x.date+'|'+x.meet+'|'+x.race+'|'+x.place)};
+const isClub=(x,r)=>{const t=resTeam(x)??x.team;return !t||t==='Delta Hawks'||(t==='Unattached'&&!!r&&r.active)};
 const repExp=x=>{const s=clockSecs(x.time);if(s==null)return null;const v=REP[`${x.date}|${x.meet}|${x.race}|${x.place}|${Math.floor(s+1e-6)}`];return v?{exp:v[0],lo:v[1],hi:v[2]}:null};
-const RM=new Map();D.runners.forEach(r=>{if(r.active)r.races.forEach(x=>{if(!isClub(x))return;const k=x.date+'|'+x.meet;
+const RM=new Map();D.runners.forEach(r=>{r.races.forEach(x=>{if(!isClub(x,r))return;const k=x.date+'|'+x.meet;
  if(!RM.has(k))RM.set(k,{key:k,date:x.date,meet:x.meet,course:x.course,list:[]});RM.get(k).list.push({r,x})})});
 const repMeets=[...RM.values()].sort((a,b)=>b.date.localeCompare(a.date)||a.meet.localeCompare(b.meet));
 const seasonOf=d=>+d.slice(0,4)-(+d.slice(5,7)<8?1:0);
@@ -679,7 +682,7 @@ function repRow(r,x){
   const mine=best.get(r.id);if(mine&&mine.x===x){const rank=[...best.values()].filter(q=>q.x.equiv_day<x.equiv_day).length+1;
    if(rank<=3)o.rec=`#${rank} all-time, ${ag} ${r.gender==='F'?'girls':'boys'}`}}
  // below range at their previous club race too
- const prev=before.filter(isClub).pop(),pe=prev&&repExp(prev);o.slow2=o.slow&&!!pe&&clockSecs(prev.time)>pe.hi;
+ const prev=before.filter(y=>isClub(y,r)).pop(),pe=prev&&repExp(prev);o.slow2=o.slow&&!!pe&&clockSecs(prev.time)>pe.hi;
  return o}
 const repBadges=o=>[o.rec&&'<span class="rb rec">Record</span>',o.pb&&'<span class="rb pb">PB</span>',o.cb&&'<span class="rb cb">Course best</span>',
  o.top&&'<span class="rb top">Top 10</span>',o.first&&'<span class="rb new">First race</span>'].filter(Boolean).join('');
@@ -757,7 +760,7 @@ function renderReport(){
  <div class="rep-two"><div><h3>Highlights</h3><ul class="list">${hl.length?hl.map(({o,what})=>li(o,what,o.pct>0?'pos':o.pct<0?'neg':'')).join(''):'<li><span class="lm">No PBs, course bests or standout races at this meet.</span></li>'}</ul></div>
  ${rated.length?`<div><h3>Check in with</h3><p class="sub">Slower than their likely range, with how the race ran taken out. Often a cramp, a fall or a cold, so ask before reading anything into it. Coaches only.</p>
  <ul class="list">${slow.length?slow.map(o=>li(o,`${sx(o)} vs ${fmt(o.e.exp)} expected (range ${fmt(o.e.lo)} to ${fmt(o.e.hi)}).${o.slow2?' Second club race in a row below range.':''}`,'neg')).join(''):'<li><span class="lm">Nobody ran slower than their range.</span></li>'}</ul></div>`:''}</div>
- <h3>Race by race</h3><p class="sub">Athletes on the ${D.meta.as_of.slice(0,4)} roster, in their races for the Delta Hawks. Expected is the projection each Hawk carried into the meet, shifted by how the rest of the race ran against theirs, so a hot or muddy day doesn't count against anyone. Beat is the share of the field they finished ahead of.</p>${races}
+ <h3>Race by race</h3><p class="sub">Hawks who ran for the Delta Hawks in each race. Expected is the projection each Hawk carried into the meet, shifted by how the rest of the race ran against theirs, so a hot or muddy day doesn't count against anyone. Beat is the share of the field they finished ahead of.</p>${races}
  ${trend}
  ${nx?`<h3>Next up</h3><p>${esc(nx.meet)}, ${fdate(nx.date)} at ${esc(courseShort(nx.course))}. ${elig} Hawk${elig===1?'':'s'} on the ${D.meta.as_of.slice(0,4)} roster with an expected time there${nx.temp?`, ${nx.temp.kind==='forecast'?'forecast':'typically'} ${nx.temp.f}°F at the start`:''}. Expected times and places are on the Projections tab.</p>`:''}`;
  document.querySelectorAll('#repBody a[data-ath]').forEach(a=>a.onclick=e=>{e.preventDefault();openRunner(a.dataset.ath)});
