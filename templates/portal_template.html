@@ -248,7 +248,6 @@ input.tin[aria-invalid="true"]{border-color:#B3261E;box-shadow:inset 0 0 0 1px #
  </div>
  <ul class="roster" id="rosterList"></ul>
  <p class="sub" id="noResults" style="margin-top:14px"></p>
- <div id="watch"></div>
 </section>
 
 <section id="runner" role="tabpanel">
@@ -382,7 +381,6 @@ const noRes=(D.meta.roster||[]).filter(r=>!r.id).map(r=>r.name);
 function renderRoster(){
  const key=$('#meetSel').value,base=D.runners.filter(r=>r.gender===G&&(!season||r.active));
  $('#noResults').textContent=season&&noRes.length?`On the 2026 roster with no results yet: ${noRes.join(', ')}.`:'';
- renderWatch();
  if(key){renderMeetRoster(key,base);return}
  $('#rosterTitle').textContent='Expected 1.5 mile times';
  $('#rosterSub').textContent=`Each athlete's expected time on the ${REF} course (Flat SAC) if they raced today. Tap a name for details.`;
@@ -394,14 +392,6 @@ function renderRoster(){
   <span class="rt">${fmt(r.rating)}<small>${fmt(lv.lo)} to ${fmt(lv.hi)}</small></span></button></li>`}).join('')
   :empty;
  document.querySelectorAll('#rosterList button').forEach(b=>b.onclick=()=>{openRunner(b.dataset.id)});
-}
-function renderWatch(){
- const w=D.runners.filter(r=>r.active&&r.surprise&&Math.abs(r.surprise.z)>=1&&r.surprise.date>=D.meta.as_of.slice(0,4)+'-01-01').sort((a,b)=>b.surprise.z-a.surprise.z);
- if(!w.length){$('#watch').innerHTML='';return}
- const row=r=>`<li><button data-id="${esc(r.id)}"><span class="rn">${esc(r.name)}</span><span class="rm">${esc(r.surprise.meet)}, ${fdate(r.surprise.date)}: ${r.surprise.time} vs ${fmt(r.surprise.expected)} expected</span>
-  <span class="rt" style="font-size:22px">${r.surprise.pct>0?'+':''}${r.surprise.pct}%<small>${r.surprise.pct>0?'faster':'slower'} than expected</small></span></button></li>`;
- $('#watch').innerHTML=`<h3>Latest race vs expectations</h3><p class="sub">2026 roster athletes whose most recent race was well outside what their earlier races projected, after allowing for how fast the whole field ran that day. Worth a check-in either way.</p><ul class="roster">${w.map(row).join('')}</ul>`;
- document.querySelectorAll('#watch button').forEach(b=>b.onclick=()=>openRunner(b.dataset.id));
 }
 function renderMeetRoster(key,base){
  const m=sched.find(x=>meetKey(x)===key);
