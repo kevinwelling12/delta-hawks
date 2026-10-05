@@ -42,7 +42,8 @@ the sibling folder ../delta-hawks (private, not in git; read its CLAUDE.md for t
   race|place|floor(seconds)": [expected, lo, hi]}}: the projection on the morning of the meet (strict refit), shifted by the
   median of how the rest of the race ran against their own projections, with the 80% range. Without D.reports the report
   still shows PBs, course bests, records, team scores and the day, with a note. Team scores are unofficial (full fields,
-  teams of 5+, 6th and 7th displace). "Check in with" lists Hawks slower than their range: keep it coaches only if the
+  teams of 5+, 6th and 7th displace). Highlights are ordered by a score, one point each for a record, faster than the range, PB, course best,
+  top 10 and top 3, ties to the bigger margin against expected, then place; first races score 0 and come last (2026-10-05). "Check in with" lists Hawks slower than their range: keep it coaches only if the
   'family' role is ever added.
 - Don't call db.settings() with long-polling options: this SDK auto-detects by default and throws if forced.
 - Kevin prefers plain, direct writing: no em dashes, no filler.
