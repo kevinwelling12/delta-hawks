@@ -704,15 +704,14 @@ function renderReport(){
   md0!=null?[sgnP(md0),'median Hawk vs expected, with how the race ran taken out']:null,
   [pbs.length,'personal bests (1.5 mi equivalent)'],[cbs.length,'course bests'],[tops.length,'top-10 finishes'],
   day!=null?[sgnP(-day),`how fast the field ran beyond course and heat${T!=null?` (${T}°F)`:''}`]:null].filter(Boolean);
- // highlights, best first: records, faster than the range, PBs, top 10, first races
- const used=new Set(),hl=[];const add=(o,what)=>{if(used.has(o))return;used.add(o);hl.push({o,what})};
- const sx=o=>`${esc(o.x.race)}: ${esc(o.x.time)}`;
- recs.forEach(o=>add(o,`${sx(o)}. ${o.rec} (unofficial).`));
- rated.filter(o=>o.fast).sort((a,b)=>b.pct-a.pct).forEach(o=>add(o,`${sx(o)} vs ${fmt(o.e.exp)} expected, faster than the likely range.`));
- pbs.forEach(o=>add(o,`${sx(o)}, new personal best${o.cb?' and course best':''}.`));
- cbs.forEach(o=>add(o,`${sx(o)}, course best.`));
- tops.forEach(o=>add(o,`${sx(o)}, ${nth(+o.x.place)} of ${o.x.field}.`));
- firsts.forEach(o=>add(o,`${sx(o)}, first race, ${nth(+o.x.place)} of ${o.x.field}.`));
+ // highlights, best first: one point each for a record, faster than the range, PB, course best, top 10 and top 3;
+ // ties go to the bigger margin against expected, then the better place. First races score 0 and come after.
+ const sx=o=>`${esc(o.x.race)}: ${esc(o.x.time)}`,pl=o=>`${nth(+o.x.place)} of ${o.x.field}`;
+ const score=o=>!!o.rec+o.fast+o.pb+o.cb+o.top+(+o.x.place<=3);
+ const hl=rows.filter(o=>score(o)||o.first).sort((a,b)=>score(b)-score(a)||(b.pct??-1e9)-(a.pct??-1e9)||a.x.place-b.x.place).map(o=>{
+  const w=[o.top||o.first?pl(o):'',o.first?'first race':'',o.pb?`new personal best${o.cb?' and course best':''}`:o.cb?'course best':'',
+   o.fast?`faster than the likely range (${fmt(o.e.exp)} expected)`:''].filter(Boolean);
+  return {o,what:`${sx(o)}${w.length?', '+w.join(', '):''}.${o.rec?` ${o.rec} (unofficial).`:''}`}});
  const li=(o,what,cls)=>`<li><span class="ln"><a href="#" data-ath="${esc(o.r.id)}">${esc(o.r.name)}</a></span><span class="lm">${repBadges(o)}</span><span class="lm">${what}</span><span class="lt ${cls}">${o.pct==null?'':sgnP(o.pct)}</span></li>`;
  const slow=rated.filter(o=>o.slow).sort((a,b)=>a.pct-b.pct);
  // race by race, in the order the meet listed them
