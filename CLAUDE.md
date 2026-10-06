@@ -44,7 +44,10 @@ the sibling folder ../delta-hawks (private, not in git; read its CLAUDE.md for t
   still shows PBs, course bests, records, team scores and the day, with a note. Team scores are unofficial (full fields,
   teams of 5+, 6th and 7th displace). Highlights are ordered by a score, one point each for a record, faster than the range, PB, course best,
   top 10 and top 3, ties to the bigger margin against expected, then place; first races score 0 and come last (2026-10-05). A Hawk slower than their range is left out of Highlights and
-  listed only under "Check in with", with any place, PB or course best noted there (2026-10-05). "Check in with" lists Hawks slower than their range: keep it coaches only if the
+  listed only under "Check in with", with any place, PB or course best noted there (2026-10-05). Each result with an expected time is
+  labeled by where it fell in the 80% range (z in range units, ends at ±1.2816): faster than range, fast end (z > 0.52), middle,
+  slow end, slower than range (10/20/40/20/10% of likely outcomes). Only "slower than range" is red; middle and slow end are grey.
+  The race table shows the label with the % beneath and a range bar (faster to the right, tick at expected) (2026-10-05). "Check in with" lists Hawks slower than their range: keep it coaches only if the
   'family' role is ever added.
 - Don't call db.settings() with long-polling options: this SDK auto-detects by default and throws if forced.
 - Kevin prefers plain, direct writing: no em dashes, no filler.
