@@ -38,7 +38,9 @@ the sibling folder ../delta-hawks (private, not in git; read its CLAUDE.md for t
   read the pages build without the tab. `python3 build.py --no-schedule` skips it. Not in the claude.ai build.
 - Meet report (XC Meets tab, Report view, the default; Results is the old race table): one Hawks club meet at a glance
   for the staff. A race lists whoever ran for the Delta Hawks in it, by the results row's team (past Hawks show at past
-  meets, not at later meets for other teams; Unattached counts only for the active roster). Expected times come from the pipeline's scripts/meet_reports.py as D.reports = {v, since, x: {"date|meet|
+  meets, not at later meets for other teams; Unattached counts only for the active roster). On a tied place the row with the
+  athlete's name wins, else the one Hawks row (2026-10-06: before that the last tied row won, which dropped Hawks tied with
+  another team's runner). Expected times come from the pipeline's scripts/meet_reports.py as D.reports = {v, since, x: {"date|meet|
   race|place|floor(seconds)": [expected, lo, hi]}}: the projection on the morning of the meet (strict refit), shifted by the
   median of how the rest of the race ran against their own projections, with the 80% range. Without D.reports the report
   still shows PBs, course bests, records, team scores and the day, with a note. Team scores are unofficial (full fields,
