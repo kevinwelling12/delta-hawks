@@ -44,10 +44,11 @@ the sibling folder ../delta-hawks (private, not in git; read its CLAUDE.md for t
   still shows PBs, course bests, records, team scores and the day, with a note. Team scores are unofficial (full fields,
   teams of 5+, 6th and 7th displace). Highlights are ordered by a score, one point each for a record, faster than the range, PB, course best,
   top 10 and top 3, ties to the bigger margin against expected, then place; first races score 0 and come last (2026-10-05). A Hawk slower than their range is left out of Highlights and
-  listed only under "Check in with", with any place, PB or course best noted there (2026-10-05). Each result with an expected time is
-  labeled by where it fell in the 80% range (z in range units, ends at ±1.2816): faster than range, fast end (z > 0.52), middle,
-  slow end, slower than range (10/20/40/20/10% of likely outcomes). Only "slower than range" is red; middle and slow end are grey.
-  The race table shows the label with the % beneath and a range bar (faster to the right, tick at expected) (2026-10-05). "Check in with" lists Hawks slower than their range: keep it coaches only if the
+  listed only under "Check in with", with any place, PB or course best noted there (2026-10-05). Results are shown in seconds against
+  expected ("14 s faster", "right on it", "49 s slower"), with the likely (80%) range as times under Expected and "inside
+  range", "ahead of range by N s" or "past range by N s" beneath; green and red only outside the range (2026-10-05; replaced
+  five % bands, which read as mixed signals when ranges differed in width). On phones the Expected column is hidden: "exp 7:47" sits under
+  the time and the result line carries the range ("inside 6:42 to 9:02", "past 8:19 by 16 s"). "Check in with" lists Hawks slower than their range: keep it coaches only if the
   'family' role is ever added.
 - Don't call db.settings() with long-polling options: this SDK auto-detects by default and throws if forced.
 - Kevin prefers plain, direct writing: no em dashes, no filler.
