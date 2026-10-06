@@ -209,10 +209,15 @@ details.deep>summary{font:700 22px/1.15 var(--cond);letter-spacing:.01em}
 .rb.top{background:var(--panel);color:var(--good);box-shadow:none}
 .rb.new{box-shadow:none;outline:1.5px dashed var(--faint);outline-offset:-1.5px;color:var(--muted)}
 .list .lt.pos,.pos{color:var(--good)}.list .lt.neg,.neg{color:var(--bad)}
-.vb{position:relative;width:96px;height:12px}
-.vb::before{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--faint)}
-.vb i{position:absolute;top:2px;height:8px;border-radius:2px}
-.vb i.p{left:50%;background:var(--good)}.vb i.m{right:50%;background:var(--bad)}
+.bd-fast{color:var(--good);font-weight:700}.bd-hi{color:var(--good)}.bd-mid,.bd-lo{color:var(--muted)}.bd-slow{color:var(--bad);font-weight:700}
+.list .lt.bd{font-size:19px;line-height:1.05;max-width:7em}
+td.bd{white-space:normal;min-width:6.5em;line-height:1.2}td.bd small{display:block;font-size:12px;font-weight:400;color:var(--muted)}
+.rbar{position:relative;width:120px;height:14px}
+.rbar b{position:absolute;left:15%;right:15%;top:6px;height:2px;background:var(--line)}
+.rbar u{position:absolute;left:35.7%;right:35.7%;top:3px;height:8px;border-radius:2px;background:var(--line)}
+.rbar s{position:absolute;left:50%;top:0;bottom:0;width:1.5px;background:var(--faint)}
+.rbar i{position:absolute;top:3px;width:8px;height:8px;margin-left:-4px;border-radius:50%;background:var(--muted)}
+.rbar i.bd-fast,.rbar i.bd-hi{background:var(--good)}.rbar i.bd-slow{background:var(--bad)}
 .rep-race{margin-top:22px}
 .rep-race h4{margin:0;font:700 19px/1.2 var(--cond);letter-spacing:.01em}
 .rep-race .rh{display:flex;flex-wrap:wrap;gap:2px 14px;align-items:baseline;margin-bottom:8px}
@@ -661,6 +666,9 @@ const sgnP=v=>Math.abs(v)<.05?'0.0%':(v>0?'+':'−')+Math.abs(v).toFixed(1)+'%';
 function repRow(r,x){
  const s=clockSecs(x.time),e=repExp(x),o={r,x,s,e,pct:e?100*(e.exp-s)/e.exp:null};
  o.fast=!!e&&s<e.lo;o.slow=!!e&&s>e.hi;
+ // where the result fell in the range: the 80% range in five bands, faster 10% / fast end 20% / middle 40% / slow end 20% / slower 10%
+ if(e){o.z=Math.log(e.exp/s)/(Math.log(e.hi/e.exp)/1.2816);
+  o.band=o.fast?['fast','Faster than range']:o.slow?['slow','Slower than range']:o.z>.5244?['hi','Fast end of range']:o.z<-.5244?['lo','Slow end of range']:['mid','Middle of range']}
  const before=r.races.filter(y=>y.date<x.date);o.first=!before.length;
  const eq=before.filter(y=>y.equiv_day>0);o.pb=x.equiv_day>0&&eq.length>0&&eq.every(y=>x.equiv_day<y.equiv_day);
  const d=raceDist(x),same=d?before.filter(y=>y.course===x.course&&raceDist(y)&&Math.abs(raceDist(y)-d)<.02):[];
@@ -696,7 +704,7 @@ function renderReport(){
  const day=days.length?100*(days.reduce((a,b)=>a+b)/days.length-1):null,heat=T!=null?100*(heatF(T)-1):null;
  const best=[...rated].sort((a,b)=>b.pct-a.pct)[0];
  const sum=`${rows.length} Hawk${rows.length>1?'s':''} raced at ${m.meet}${raceKeys.length>1?` in ${raceKeys.length} races`:''}. `
-  +(rated.length?`${beat.length} of ${rated.length} with a projection beat it, and the median Hawk ran ${Math.abs(md0).toFixed(1)}% ${md0>=0?'faster':'slower'} than expected after allowing for how the whole race ran. `:'')
+  +(rated.length?`${beat.length} of ${rated.length} with a projection beat it, and the median Hawk ran ${Math.abs(md0).toFixed(1)}% ${md0>=0?'faster':'slower'} than expected after allowing for how the whole race ran. `+(n=>`Against their likely ranges: ${[['fast','faster than range'],['hi','fast end'],['mid','middle'],['lo','slow end'],['slow','slower than range']].map(([k,t])=>n(k)+' '+t).join(', ')}. `)(k=>rated.filter(o=>o.band[0]===k).length):'')
   +(T!=null?`It was ${T}°F at the start${heat>=.5?`, which cost about ${heat.toFixed(1)}%`:''}${day!=null&&Math.abs(day)>=.5?`, and the field ran ${Math.abs(day).toFixed(1)}% ${day>0?'slow':'fast'} beyond course and heat`:''}. `:'')
   +`${pbs.length} personal best${pbs.length===1?'':'s'}, ${cbs.length} course best${cbs.length===1?'':'s'}${recs.length?`, ${recs.length} race${recs.length>1?'s':''} on the unofficial records list`:''}, ${tops.length} top-10 finish${tops.length===1?'':'es'}. `
   +(firsts.length?`${firsts.length} ran their first race. `:'')+(best&&best.pct>0?`Best race against expectation: ${best.r.name} (${sgnP(best.pct)}).`:'');
@@ -713,17 +721,17 @@ function renderReport(){
  const hl=rows.filter(o=>(score(o)||o.first)&&!o.slow).sort((a,b)=>score(b)-score(a)||(b.pct??-1e9)-(a.pct??-1e9)||a.x.place-b.x.place).map(o=>{
   const w=[...ach(o),o.fast?`faster than the likely range (${fmt(o.e.exp)} expected)`:''].filter(Boolean);
   return {o,what:`${sx(o)}${w.length?', '+w.join(', '):''}.${o.rec?` ${o.rec} (unofficial).`:''}`}});
- const li=(o,what,cls)=>`<li><span class="ln"><a href="#" data-ath="${esc(o.r.id)}">${esc(o.r.name)}</a></span><span class="lm">${repBadges(o)}</span><span class="lm">${what}</span><span class="lt ${cls}">${o.pct==null?'':sgnP(o.pct)}</span></li>`;
+ const li=(o,what)=>`<li><span class="ln"><a href="#" data-ath="${esc(o.r.id)}">${esc(o.r.name)}</a></span><span class="lm">${repBadges(o)}</span><span class="lm">${what}</span>${o.band?`<span class="lt bd bd-${o.band[0]}">${o.band[1]}<small>${sgnP(o.pct)} vs expected</small></span>`:''}</li>`;
  const slow=rated.filter(o=>o.slow).sort((a,b)=>a.pct-b.pct);
  // race by race, in the order the meet listed them
  const races=raceKeys.map(k=>{const hs=rows.filter(o=>o.x.date+'|'+o.x.meet+'|'+o.x.race===k).sort((a,b)=>a.x.place-b.x.place),x0=hs[0].x,res=resBy(k);
   const win=res.length?res.reduce((a,b)=>+a.place<=+b.place?a:b):null,ts=teamScore(k),secs=hs.map(o=>o.s).filter(v=>v!=null),n5=Math.min(5,secs.length);
   const team=ts?(ts.place?`Hawks ${nth(ts.place)} of ${ts.of} teams, ${ts.pts} points (unofficial)`:`no team score (${ts.hawks} Hawk${ts.hawks===1?'':'s'})`):'';
   return `<div class="rep-race"><div class="rh"><h4>${esc(x0.race)}</h4><span>${x0.field} finishers${win?`, winner ${esc(win.time)}`:''}${team?' · '+team:''}</span></div>
-  <div class="scroll"><table><tr><th class="n">Pl</th><th>Hawk</th><th class="n">Time</th><th class="n lg">Expected</th><th class="n">vs exp</th><th class="lg" aria-label="Difference, ±5% full width"></th><th class="n lg">Beat</th></tr>
-  ${hs.map(o=>{const w=o.pct==null?0:Math.min(Math.abs(o.pct),5)/5*50;return `<tr><td class="n">${o.x.place}</td><td class="w"><a href="#" data-ath="${esc(o.r.id)}">${esc(o.r.name)}</a><span class="rm">${repBadges(o)}</span></td>
-  <td class="n">${esc(o.x.time)}</td><td class="n lg">${o.e?fmt(o.e.exp):''}</td><td class="n ${o.pct>0?'pos':o.pct<0?'neg':''}">${o.pct==null?'':sgnP(o.pct)}</td>
-  <td class="lg">${o.pct==null?'':`<div class="vb" aria-hidden="true"><i class="${o.pct>=0?'p':'m'}" style="width:${w.toFixed(1)}%"></i></div>`}</td><td class="n lg">${o.x.pct!=null?Math.round(o.x.pct)+'%':''}</td></tr>`}).join('')}</table></div>
+  <div class="scroll"><table><tr><th class="n">Pl</th><th>Hawk</th><th class="n">Time</th><th class="n lg">Expected</th><th class="n">vs range</th><th class="lg" aria-label="Likely range, faster to the right: tick at expected, dot at the result"></th><th class="n lg">Beat</th></tr>
+  ${hs.map(o=>{const bx=o.band?Math.max(3,Math.min(97,50+35*o.z/1.2816)):0;return `<tr><td class="n">${o.x.place}</td><td class="w"><a href="#" data-ath="${esc(o.r.id)}">${esc(o.r.name)}</a><span class="rm">${repBadges(o)}</span></td>
+  <td class="n">${esc(o.x.time)}</td><td class="n lg">${o.e?fmt(o.e.exp):''}</td><td class="n bd ${o.band?'bd-'+o.band[0]:''}">${o.band?`${o.band[1]}<small>${sgnP(o.pct)}</small>`:''}</td>
+  <td class="lg">${o.band?`<div class="rbar" aria-hidden="true"><b></b><u></u><s></s><i class="bd-${o.band[0]}" style="left:${bx.toFixed(1)}%"></i></div>`:''}</td><td class="n lg">${o.x.pct!=null?Math.round(o.x.pct)+'%':''}</td></tr>`}).join('')}</table></div>
   ${n5>=2?`<p class="pk">Hawks pack: ${fmt(Math.max(...secs.slice(0,n5))-Math.min(...secs))} from 1st to ${nth(n5)} Hawk.</p>`:''}</div>`}).join('');
  // season trend: the median Hawk vs expected at each meet this season
  const sy=seasonOf(m.date),pts=repMeets.filter(q=>seasonOf(q.date)===sy).map(q=>{const v=q.list.map(({r,x})=>{const e=repExp(x),s=clockSecs(x.time);return e&&s!=null?100*(e.exp-s)/e.exp:null}).filter(v=>v!=null);
@@ -747,9 +755,9 @@ function renderReport(){
  <div class="bar"><button class="chip" id="repCopy" type="button">Copy summary</button><span class="sub" id="repCopied" role="status" style="margin:0"></span></div>
  ${rated.length?'':`<p class="note">No expected times for this meet yet. They are added when the model runs (meet_reports.py), for meets since the start of last season.</p>`}
  <div class="kv">${kv.map(([b,s])=>`<div><b>${b}</b><span>${s}</span></div>`).join('')}</div>
- <div class="rep-two"><div><h3>Highlights</h3><ul class="list">${hl.length?hl.map(({o,what})=>li(o,what,o.pct>0?'pos':o.pct<0?'neg':'')).join(''):'<li><span class="lm">No PBs, course bests or standout races at this meet.</span></li>'}</ul></div>
+ <div class="rep-two"><div><h3>Highlights</h3><ul class="list">${hl.length?hl.map(({o,what})=>li(o,what)).join(''):'<li><span class="lm">No PBs, course bests or standout races at this meet.</span></li>'}</ul></div>
  ${rated.length?`<div><h3>Check in with</h3><p class="sub">Slower than their likely range, with how the race ran taken out. Often a cramp, a fall or a cold, so ask before reading anything into it. Coaches only.</p>
- <ul class="list">${slow.length?slow.map(o=>li(o,`${sx(o)} vs ${fmt(o.e.exp)} expected (range ${fmt(o.e.lo)} to ${fmt(o.e.hi)})${(g=>g.length?`, though ${g.join(' and ')}`:'')(ach(o).filter(t=>t!=='first race'&&(o.top||t!==pl(o))))}.${o.first?' First race.':''}${o.slow2?' Second club race in a row below range.':''}`,'neg')).join(''):'<li><span class="lm">Nobody ran slower than their range.</span></li>'}</ul></div>`:''}</div>
+ <ul class="list">${slow.length?slow.map(o=>li(o,`${sx(o)} vs ${fmt(o.e.exp)} expected (range ${fmt(o.e.lo)} to ${fmt(o.e.hi)})${(g=>g.length?`, though ${g.join(' and ')}`:'')(ach(o).filter(t=>t!=='first race'&&(o.top||t!==pl(o))))}.${o.first?' First race.':''}${o.slow2?' Second club race in a row below range.':''}`)).join(''):'<li><span class="lm">Nobody ran slower than their range.</span></li>'}</ul></div>`:''}</div>
  <h3>Race by race</h3><p class="sub">Hawks who ran for the Delta Hawks in each race. Expected is the projection each Hawk carried into the meet, shifted by how the rest of the race ran against theirs, so a hot or muddy day doesn't count against anyone. Beat is the share of the field they finished ahead of.</p>${races}
  ${trend}
  ${nx?`<h3>Next up</h3><p>${esc(nx.meet)}, ${fdate(nx.date)} at ${esc(courseShort(nx.course))}. ${elig} Hawk${elig===1?'':'s'} on the ${D.meta.as_of.slice(0,4)} roster with an expected time there${nx.temp?`, ${nx.temp.kind==='forecast'?'forecast':'typically'} ${nx.temp.f}°F at the start`:''}. Expected times and places are on the Projections tab.</p>`:''}`;
