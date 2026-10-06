@@ -199,9 +199,6 @@ details.deep>summary{font:700 22px/1.15 var(--cond);letter-spacing:.01em}
 /* meet report */
 [hidden]{display:none!important}
 .rep-sum{font-size:17px;line-height:1.55;max-width:68ch;margin:0 0 10px}
-.rep-two{display:grid;gap:0 32px}
-@media (min-width:860px){.rep-two{grid-template-columns:1.3fr 1fr}}
-.rep-two>div{min-width:0}
 .rb{display:inline-block;margin:2px 4px 0 0;padding:2px 6px 1px;border-radius:4px;font:700 12px/1.2 var(--cond);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;box-shadow:inset 0 0 0 1.5px var(--line);color:var(--ink)}
 .rb.pb{background:var(--sel-bg);color:var(--sel-fg);box-shadow:none}
 .rb.cb{box-shadow:inset 0 0 0 1.5px var(--mark)}
@@ -708,24 +705,13 @@ function renderReport(){
   md0!=null?[sgnP(md0),'median Hawk vs expected, with how the race ran taken out']:null,
   [pbs.length,'personal bests (1.5 mi equivalent)'],[cbs.length,'course bests'],[tops.length,'top-10 finishes'],
   day!=null?[sgnP(-day),`how fast the field ran beyond course and heat${T!=null?` (${T}°F)`:''}`]:null].filter(Boolean);
- // highlights, best first: one point each for a record, faster than the range, PB, course best, top 10 and top 3;
- // ties go to the bigger margin against expected, then the better place. First races score 0 and come after.
- // Anyone slower than their range is only under "Check in with", with their place, PB or course best noted there.
- const sx=o=>`${esc(o.x.race)}: ${esc(o.x.time)}`,pl=o=>`${nth(+o.x.place)} of ${o.x.field}`;
- const score=o=>!!o.rec+o.fast+o.pb+o.cb+o.top+(+o.x.place<=3);
- const ach=o=>[o.top||o.first?pl(o):'',o.first?'first race':'',o.pb?`new personal best${o.cb?' and course best':''}`:o.cb?'course best':''].filter(Boolean);
- const hl=rows.filter(o=>(score(o)||o.first)&&!o.slow).sort((a,b)=>score(b)-score(a)||(b.pct??-1e9)-(a.pct??-1e9)||a.x.place-b.x.place).map(o=>{
-  const w=[...ach(o),o.fast?`${o.res} than expected (likely ${fmt(o.e.lo)} to ${fmt(o.e.hi)})`:''].filter(Boolean);
-  return {o,what:`${sx(o)}${w.length?', '+w.join(', '):''}.${o.rec?` ${o.rec} (unofficial).`:''}`}});
- const li=(o,what)=>`<li><span class="ln"><a href="#" data-ath="${esc(o.r.id)}">${esc(o.r.name)}</a></span><span class="lm">${repBadges(o)}</span><span class="lm">${what}</span>${o.e?`<span class="lt rs ${o.rcls}">${o.res}<small>${o.where}</small></span>`:''}</li>`;
- const slow=rated.filter(o=>o.slow).sort((a,b)=>a.pct-b.pct);
  // race by race, in the order the meet listed them
  const races=raceKeys.map(k=>{const hs=rows.filter(o=>o.x.date+'|'+o.x.meet+'|'+o.x.race===k).sort((a,b)=>a.x.place-b.x.place),x0=hs[0].x,res=resBy(k);
   const win=res.length?res.reduce((a,b)=>+a.place<=+b.place?a:b):null,ts=teamScore(k),secs=hs.map(o=>o.s).filter(v=>v!=null),n5=Math.min(5,secs.length);
   const team=ts?(ts.place?`Hawks ${nth(ts.place)} of ${ts.of} teams, ${ts.pts} points (unofficial)`:`no team score (${ts.hawks} Hawk${ts.hawks===1?'':'s'})`):'';
   return `<div class="rep-race"><div class="rh"><h4>${esc(x0.race)}</h4><span>${x0.field} finishers${win?`, winner ${esc(win.time)}`:''}${team?' · '+team:''}</span></div>
   <div class="scroll"><table><tr><th class="n">Pl</th><th>Hawk</th><th class="n">Time</th><th class="n lg">Expected</th><th class="n">Result</th><th class="n lg">Beat</th></tr>
-  ${hs.map(o=>{return `<tr><td class="n">${o.x.place}</td><td class="w"><a href="#" data-ath="${esc(o.r.id)}">${esc(o.r.name)}</a><span class="rm">${repBadges(o)}</span></td>
+  ${hs.map(o=>{return `<tr><td class="n">${o.x.place}</td><td class="w"><a href="#" data-ath="${esc(o.r.id)}">${esc(o.r.name)}</a><span class="rm">${repBadges(o)}</span>${o.rec?`<span class="rm">${o.rec} (unofficial)</span>`:''}${o.slow2?'<span class="rm">Second club race in a row past range</span>':''}</td>
   <td class="n tx">${esc(o.x.time)}${o.e?`<small class="sm">exp ${fmt(o.e.exp)}</small>`:''}</td><td class="n xr lg">${o.e?`${fmt(o.e.exp)}<small>likely ${fmt(o.e.lo)} to ${fmt(o.e.hi)}</small>`:''}</td><td class="n rs ${o.rcls||''}">${o.e?`${o.res}<small class="lg">${o.where}</small><small class="sm">${o.whereR}</small>`:''}</td>
   <td class="n lg">${o.x.pct!=null?Math.round(o.x.pct)+'%':''}</td></tr>`}).join('')}</table></div>
   ${n5>=2?`<p class="pk">Hawks pack: ${fmt(Math.max(...secs.slice(0,n5))-Math.min(...secs))} from 1st to ${nth(n5)} Hawk.</p>`:''}</div>`}).join('');
@@ -751,10 +737,7 @@ function renderReport(){
  <div class="bar"><button class="chip" id="repCopy" type="button">Copy summary</button><span class="sub" id="repCopied" role="status" style="margin:0"></span></div>
  ${rated.length?'':`<p class="note">No expected times for this meet yet. They are added when the model runs (meet_reports.py), for meets since the start of last season.</p>`}
  <div class="kv">${kv.map(([b,s])=>`<div><b>${b}</b><span>${s}</span></div>`).join('')}</div>
- <div class="rep-two"><div><h3>Highlights</h3><ul class="list">${hl.length?hl.map(({o,what})=>li(o,what)).join(''):'<li><span class="lm">No PBs, course bests or standout races at this meet.</span></li>'}</ul></div>
- ${rated.length?`<div><h3>Check in with</h3><p class="sub">Slower than their likely range, with how the race ran taken out. Often a cramp, a fall or a cold, so ask before reading anything into it. Coaches only.</p>
- <ul class="list">${slow.length?slow.map(o=>li(o,`${sx(o)}, ${o.res} than expected (likely ${fmt(o.e.lo)} to ${fmt(o.e.hi)})${(g=>g.length?`, though ${g.join(' and ')}`:'')(ach(o).filter(t=>t!=='first race'&&(o.top||t!==pl(o))))}.${o.first?' First race.':''}${o.slow2?' Second club race in a row below range.':''}`)).join(''):'<li><span class="lm">Nobody ran slower than their range.</span></li>'}</ul></div>`:''}</div>
- <h3>Race by race</h3><p class="sub">Hawks who ran for the Delta Hawks in each race. Expected is the projection each Hawk carried into the meet, shifted by how the rest of the race ran against theirs, so a hot or muddy day doesn't count against anyone. Beat is the share of the field they finished ahead of.</p>${races}
+ <h3>Race by race</h3><p class="sub">Hawks who ran for the Delta Hawks in each race. Expected is the projection each Hawk carried into the meet, shifted by how the rest of the race ran against theirs, so a hot or muddy day doesn't count against anyone. Past range means slower than the likely range: often a cramp, a fall or a cold, so ask before reading anything into it. Beat is the share of the field they finished ahead of.</p>${races}
  ${trend}
  ${nx?`<h3>Next up</h3><p>${esc(nx.meet)}, ${fdate(nx.date)} at ${esc(courseShort(nx.course))}. ${elig} Hawk${elig===1?'':'s'} on the ${D.meta.as_of.slice(0,4)} roster with an expected time there${nx.temp?`, ${nx.temp.kind==='forecast'?'forecast':'typically'} ${nx.temp.f}°F at the start`:''}. Expected times and places are on the Projections tab.</p>`:''}`;
  document.querySelectorAll('#repBody a[data-ath]').forEach(a=>a.onclick=e=>{e.preventDefault();openRunner(a.dataset.ath)});

@@ -42,13 +42,12 @@ the sibling folder ../delta-hawks (private, not in git; read its CLAUDE.md for t
   race|place|floor(seconds)": [expected, lo, hi]}}: the projection on the morning of the meet (strict refit), shifted by the
   median of how the rest of the race ran against their own projections, with the 80% range. Without D.reports the report
   still shows PBs, course bests, records, team scores and the day, with a note. Team scores are unofficial (full fields,
-  teams of 5+, 6th and 7th displace). Highlights are ordered by a score, one point each for a record, faster than the range, PB, course best,
-  top 10 and top 3, ties to the bigger margin against expected, then place; first races score 0 and come last (2026-10-05). A Hawk slower than their range is left out of Highlights and
-  listed only under "Check in with", with any place, PB or course best noted there (2026-10-05). Results are shown in seconds against
+  teams of 5+, 6th and 7th displace). Highlights and Check in with were removed (2026-10-06): everything sits in the race tables, with badges (record, PB,
+  course best, top 10, first race) and notes under the name (the record's rank, a second club race in a row past range). Results are shown in seconds against
   expected ("14 s faster", "right on it", "49 s slower"), with the likely (80%) range as times under Expected and "inside
   range", "ahead of range by N s" or "past range by N s" beneath; green and red only outside the range (2026-10-05; replaced
   five % bands, which read as mixed signals when ranges differed in width). On phones the Expected column is hidden: "exp 7:47" sits under
-  the time and the result line carries the range ("inside 6:42 to 9:02", "past 8:19 by 16 s"). "Check in with" lists Hawks slower than their range: keep it coaches only if the
-  'family' role is ever added.
+  the time and the result line carries the range ("inside 6:42 to 9:02", "past 8:19 by 16 s"). Results past range (slower than likely) are for the coaches: hide them, or the
+  report, if the 'family' role is ever added.
 - Don't call db.settings() with long-polling options: this SDK auto-detects by default and throws if forced.
 - Kevin prefers plain, direct writing: no em dashes, no filler.
