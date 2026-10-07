@@ -49,5 +49,9 @@ the sibling folder ../delta-hawks (private, not in git; read its CLAUDE.md for t
   five % bands, which read as mixed signals when ranges differed in width). On phones the Expected column is hidden: "exp 7:47" sits under
   the time and the result line carries the range ("inside 6:42 to 9:02", "past 8:19 by 16 s"). Results past range (slower than likely) are for the coaches: hide them, or the
   report, if the 'family' role is ever added.
+- Entry lists (Projections tab, a meet in "Expected at"): when a schedule entry carries entries = {as_of, ids: [runner ids],
+  unmatched: [names with no results]} from the pipeline (the team app's "going" list), only those Hawks show, the menu says
+  "N going", and the note lists entered Hawks with no expected time there and names with no results. Without entries the
+  meet shows every eligible roster athlete, as before. The names live only in the private pipeline.
 - Don't call db.settings() with long-polling options: this SDK auto-detects by default and throws if forced.
 - Kevin prefers plain, direct writing: no em dashes, no filler.

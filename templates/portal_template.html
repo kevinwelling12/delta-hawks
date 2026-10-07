@@ -370,7 +370,7 @@ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>show(b.dataset.
 let G='F';const season=true; // predictions cover the current roster only; past athletes stay on the Athletes tab
 const lastDate=r=>r.races[r.races.length-1].date;
 const sched=D.meta.schedule||[],meetKey=m=>m.date+'|'+m.meet;
-$('#meetSel').innerHTML=sched.map(m=>`<option value="${esc(meetKey(m))}">${esc(m.meet)}, ${fdate(m.date)}</option>`).join('')+`<option value="">${REF} 1.5 mi, if raced today</option>`;
+$('#meetSel').innerHTML=sched.map(m=>`<option value="${esc(meetKey(m))}">${esc(m.meet)}, ${fdate(m.date)}${m.entries?`, ${m.entries.ids.length+(m.entries.unmatched||[]).length} going`:''}</option>`).join('')+`<option value="">${REF} 1.5 mi, if raced today</option>`;
 $('#meetSel').onchange=renderRoster;
 const empty='<li class="empty">No 2026 roster athletes have results for this view yet. Past athletes are on the Athletes tab.</li>';
 const noRes=(D.meta.roster||[]).filter(r=>!r.id).map(r=>r.name);
@@ -392,10 +392,16 @@ function renderRoster(){
 function renderMeetRoster(key,base){
  const m=sched.find(x=>meetKey(x)===key);
  $('#rosterTitle').textContent=m.meet;
- $('#rosterSub').textContent=`${fdate(m.date)} at ${courseShort(m.course)}. Expected times on meet day, grouped by race. Races are matched from grade and age as listed at meets, so check against actual entries.`
+ $('#rosterSub').textContent=`${fdate(m.date)} at ${courseShort(m.course)}. Expected times on meet day, grouped by race. Races are matched from grade and age as listed at meets, so check against the meet's own entries.`
   +(m.temp?` ${m.temp.kind==='forecast'?'Forecast':'Typical'} ${m.temp.f}°F at the start${m.temp.f>62?`, which slows times about ${Math.round((m.temp.f-60)/10*D.meta.heat_per_10F*100)}%`:''}.`:'')
-  +(m.new_course?' No results from this course yet, so times use the typical effect of races this long and ranges are wider.':'');
- const rows=[];base.forEach(r=>(r.upcoming||[]).filter(u=>u.date+'|'+u.meet===key).forEach(u=>rows.push({r,u})));
+  +(m.new_course?' No results from this course yet, so times use the typical effect of races this long and ranges are wider.':'')
+  +(m.entries?` Only the Hawks marked going on the team app (as of ${fdate(m.entries.as_of)}).`:'');
+ // with an entry list from the team app (m.entries: matched athlete ids, plus names with no results to match), only entered Hawks show
+ const ent=m.entries?new Set(m.entries.ids):null;
+ const rows=[];base.forEach(r=>{if(!ent||ent.has(r.id))(r.upcoming||[]).filter(u=>u.date+'|'+u.meet===key).forEach(u=>rows.push({r,u}))});
+ if(ent){const has=new Set(rows.map(x=>x.r.id)),none=D.runners.filter(r=>ent.has(r.id)&&r.gender===G&&!has.has(r.id)).map(r=>r.name);
+  const un=m.entries.unmatched||[];
+  $('#noResults').textContent=[none.length?`Going, but no expected time for this meet: ${none.join(', ')}.`:'',un.length?`Going, with no results yet: ${un.join(', ')}.`:''].filter(Boolean).join(' ')}
  const ord=g=>m.races.findIndex(x=>g.startsWith(x));
  const groups=[...new Set(rows.map(x=>x.u.race))].sort((a,b)=>ord(a)-ord(b)||a.length-b.length);
  $('#rosterList').innerHTML=rows.length?groups.map(g=>`<li class="grp"><h3>${esc(g)}</h3></li>`+rows.filter(x=>x.u.race===g).sort((a,b)=>a.u.pred-b.u.pred).map(({r,u},i)=>`<li><button class="ranked" data-id="${esc(r.id)}"><span class="rk">${i+1}</span><span class="rn">${esc(r.name)}</span>
