@@ -36,6 +36,9 @@ the sibling folder ../delta-hawks (private, not in git; read its CLAUDE.md for t
   RSS feed for links, then the post page, since the feed is cut off) and adds the tab to both web portals. Nothing is
   saved in the repo. pages.yml rebuilds every 3 hours so a new Sunday post appears on its own; if the blog can't be
   read the pages build without the tab. `python3 build.py --no-schedule` skips it. Not in the claude.ai build.
+- Course PRs (XC Projections tab, admins only, web build only: src/course_prs.js): a second view next to Expected with each
+  2026 roster athlete's fastest clock time on the next scheduled meet's course, at their race distance there (one decimal,
+  rounded up to the tenth), girls and boys side by side for a screenshot. The admin check is display only; coaches can read the data.
 - Meet report (XC Meets tab, Report view, the default; Results is the old race table): one Hawks club meet at a glance
   for the staff. A race lists whoever ran for the Delta Hawks in it, by the results row's team (past Hawks show at past
   meets, not at later meets for other teams; Unattached counts only for the active roster). Expected times come from the pipeline's scripts/meet_reports.py as D.reports = {v, since, x: {"date|meet|
