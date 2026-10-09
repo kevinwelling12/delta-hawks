@@ -1,8 +1,8 @@
-// Course PRs, admins only: a view on the Projections tab with each 2026 roster athlete's fastest clock time on the next
+// Course PRs, for admins and coaches: a view on the Projections tab with each 2026 roster athlete's fastest clock time on the next
 // scheduled meet's course, at the distance of their race there (one decimal, girls and boys side by side for a screenshot).
 // Web build only; build.py adds it after the portal script and gate.js sets DH_ROLE first.
 (function(){
- if(window.DH_ROLE!=='admin')return;
+ if(!['admin','coach'].includes(window.DH_ROLE))return;
  const today=new Date().toLocaleDateString('en-CA',{timeZone:'America/Los_Angeles'});
  const m=[...sched].sort((a,b)=>a.date.localeCompare(b.date)).find(x=>x.date>=today);if(!m)return;
  const roster=D.runners.filter(r=>r.active),key=meetKey(m);
@@ -34,7 +34,7 @@
  bar.innerHTML='<button class="chip" data-cv="exp" aria-pressed="true">Expected</button><button class="chip" data-cv="pr" aria-pressed="false">Course PRs</button>';
  const view=document.createElement('div');view.id='cprView';view.hidden=true;
  view.innerHTML=`<h2>${esc(m.meet)}: course PRs</h2>
-  <p class="sub">${fdate(m.date)} at ${esc(courseShort(m.course))}. 2026 roster, fastest clock time on this course at the distance of each athlete's race at this meet. Data as of ${fdate(D.meta.as_of)}. Admins only.</p>
+  <p class="sub">${fdate(m.date)} at ${esc(courseShort(m.course))}. 2026 roster, fastest clock time on this course at the distance of each athlete's race at this meet. Data as of ${fdate(D.meta.as_of)}.</p>
   <style>#cprGrid{display:grid;grid-template-columns:minmax(0,1fr);gap:28px}@media(min-width:900px){#cprGrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}#cprGrid td,#cprGrid th{padding-top:7px;padding-bottom:7px}</style>
   <div id="cprGrid">${m.new_course?'<p class="sub">No results from this course yet.</p>':table('F')+table('M')}</div>`;
  sec.prepend(bar);sec.appendChild(view);
