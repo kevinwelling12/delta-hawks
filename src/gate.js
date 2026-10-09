@@ -145,7 +145,7 @@
   const start = (rec, role, email) => {
     const errs = [], h = e => errs.push(e.message || String(e));
     window.addEventListener('error', h);
-    window.DH_ROLE = role;   // read by admin-only extras (src/arc_prs.js)
+    window.DH_ROLE = role;   // read by admin-only extras (src/course_prs.js)
     try { runApp(rec.text); } finally { window.removeEventListener('error', h); }
     if (errs.length) throw Object.assign(new Error(errs[0]), { code: 'app' });
     me = { email, role }; started = window.DH_STARTED = true; accountLine(); gate.hidden = true;
