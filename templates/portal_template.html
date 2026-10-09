@@ -643,9 +643,12 @@ renderRecordsXC();
 const REP=(D.reports&&D.reports.x)||{};
 // who counts in a report: whoever ran for the Delta Hawks in that race, by the results row at their place (the athlete's
 // own record as a fallback), so past Hawks show at past meets but not at later meets they ran for another team.
-// Unattached counts only for athletes on the active roster.
-let RT=null;const resTeam=x=>{if(!RT){RT=new Map();D.results.forEach(y=>RT.set(y.date+'|'+y.meet+'|'+y.race+'|'+y.place,y.team))}return RT.get(x.date+'|'+x.meet+'|'+x.race+'|'+x.place)};
-const isClub=(x,r)=>{const t=resTeam(x)??x.team;return !t||t==='Delta Hawks'||(t==='Unattached'&&!!r&&r.active)};
+// Unattached counts only for athletes on the active roster. On a tied place, use the row with the athlete's name, else the
+// one Hawks row (nicknames), so a Hawk tied with another team's runner doesn't take that runner's team.
+let RT=null;const resTeam=(x,r)=>{if(!RT){RT=new Map();D.results.forEach(y=>{const k=y.date+'|'+y.meet+'|'+y.race+'|'+y.place;if(!RT.has(k))RT.set(k,[]);RT.get(k).push(y)})}
+ const ys=RT.get(x.date+'|'+x.meet+'|'+x.race+'|'+x.place);if(!ys)return undefined;if(ys.length===1)return ys[0].team;
+ const hw=ys.filter(y=>y.hawk);return (ys.find(y=>r&&y.name===r.name)||(hw.length===1?hw[0]:ys[ys.length-1])).team};
+const isClub=(x,r)=>{const t=resTeam(x,r)??x.team;return !t||t==='Delta Hawks'||(t==='Unattached'&&!!r&&r.active)};
 const repExp=x=>{const s=clockSecs(x.time);if(s==null)return null;const v=REP[`${x.date}|${x.meet}|${x.race}|${x.place}|${Math.floor(s+1e-6)}`];return v?{exp:v[0],lo:v[1],hi:v[2]}:null};
 const RM=new Map();D.runners.forEach(r=>{r.races.forEach(x=>{if(!isClub(x,r))return;const k=x.date+'|'+x.meet;
  if(!RM.has(k))RM.set(k,{key:k,date:x.date,meet:x.meet,course:x.course,list:[]});RM.get(k).list.push({r,x})})});
