@@ -683,7 +683,7 @@ const repBadges=o=>[o.rec&&'<span class="rb rec">Record</span>',o.pb&&'<span cla
 // unofficial team score from a full field: by default teams with 5+ finishers score, each team's first 7 hold places, top 5 count,
 // 6th breaks ties. Meets that score differently are listed in SCORING by "date|meet" (n scorers, hold places).
 // Unattached runners and short teams are taken out of the places.
-const SCORING={'2026-10-09|PR Palooza':{n:3,hold:5}};
+const SCORING={'2026-09-11|American River Open':{n:3,hold:5},'2026-10-09|PR Palooza':{n:3,hold:5}};
 function teamScore(k){const rows=resBy(k);if(!rows.length||rows[0].full!=='Y')return null;
  const rule=SCORING[k.split('|').slice(0,2).join('|')]||{n:5,hold:7},N=rule.n,H=rule.hold;
  const tm=y=>y.team&&!/unattached/i.test(y.team)?y.team:null,cnt=new Map();rows.forEach(y=>{const t=tm(y);if(t)cnt.set(t,(cnt.get(t)||0)+1)});
