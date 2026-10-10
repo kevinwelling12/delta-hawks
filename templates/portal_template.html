@@ -680,14 +680,17 @@ function repRow(r,x){
  return o}
 const repBadges=o=>[o.rec&&'<span class="rb rec">Record</span>',o.pb&&'<span class="rb pb">PB</span>',o.cb&&'<span class="rb cb">Course best</span>',
  o.top&&'<span class="rb top">Top 10</span>',o.first&&'<span class="rb new">First race</span>'].filter(Boolean).join('');
-// unofficial team score from a full field: teams with 5+ finishers score, each team's first 7 hold places, top 5 count,
-// 6th breaks ties. Unattached runners and short teams are taken out of the places.
+// unofficial team score from a full field: by default teams with 5+ finishers score, each team's first 7 hold places, top 5 count,
+// 6th breaks ties. Meets that score differently are listed in SCORING by "date|meet" (n scorers, hold places).
+// Unattached runners and short teams are taken out of the places.
+const SCORING={'2026-10-09|PR Palooza':{n:3,hold:5}};
 function teamScore(k){const rows=resBy(k);if(!rows.length||rows[0].full!=='Y')return null;
+ const rule=SCORING[k.split('|').slice(0,2).join('|')]||{n:5,hold:7},N=rule.n,H=rule.hold;
  const tm=y=>y.team&&!/unattached/i.test(y.team)?y.team:null,cnt=new Map();rows.forEach(y=>{const t=tm(y);if(t)cnt.set(t,(cnt.get(t)||0)+1)});
- const hawks=cnt.get('Delta Hawks')||0;if(hawks<5)return {hawks};
+ const hawks=cnt.get('Delta Hawks')||0;if(hawks<N)return {hawks};
  const seen=new Map(),T=new Map();let pl=0;
- rows.filter(y=>tm(y)&&cnt.get(tm(y))>=5).sort((a,b)=>a.place-b.place).forEach(y=>{const t=tm(y),n=(seen.get(t)||0)+1;seen.set(t,n);if(n>7)return;pl++;
-  if(!T.has(t))T.set(t,{t,pts:0,six:1e9});const o=T.get(t);if(n<=5)o.pts+=pl;else if(n===6)o.six=pl});
+ rows.filter(y=>tm(y)&&cnt.get(tm(y))>=N).sort((a,b)=>a.place-b.place).forEach(y=>{const t=tm(y),n=(seen.get(t)||0)+1;seen.set(t,n);if(n>H)return;pl++;
+  if(!T.has(t))T.set(t,{t,pts:0,six:1e9});const o=T.get(t);if(n<=N)o.pts+=pl;else if(n===N+1)o.six=pl});
  const list=[...T.values()].sort((a,b)=>a.pts-b.pts||a.six-b.six),i=list.findIndex(o=>o.t==='Delta Hawks');
  return {hawks,place:i+1,of:list.length,pts:list[i].pts}}
 function renderReport(){
