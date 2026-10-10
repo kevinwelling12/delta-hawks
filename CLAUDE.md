@@ -47,7 +47,7 @@ the sibling folder ../delta-hawks (private, not in git; read its CLAUDE.md for t
   race|place|floor(seconds)": [expected, lo, hi]}}: the projection on the morning of the meet (strict refit), shifted by the
   median of how the rest of the race ran against their own projections, with the 80% range. Without D.reports the report
   still shows PBs, course bests, records, team scores and the day, with a note. Team scores are unofficial (full fields,
-  teams of 5+, 6th and 7th displace); meets with other rules go in SCORING by "date|meet", e.g. PR Palooza 2026: teams of 3+, 4th and 5th displace, checked against the timer's points). Highlights and Check in with were removed (2026-10-06): everything sits in the race tables, with badges (record, PB,
+  teams of 5+, 6th and 7th displace); meets with other rules go in SCORING by "date|meet", e.g. American River Open and PR Palooza 2026: teams of 3+, 4th and 5th displace; Palooza checked against the timer's points). Highlights and Check in with were removed (2026-10-06): everything sits in the race tables, with badges (record, PB,
   course best, top 10, first race) and notes under the name (the record's rank, a second club race in a row past range). Results are shown in seconds against
   expected ("14 s faster", "right on it", "49 s slower"), with the likely (80%) range as times under Expected and "inside
   range", "ahead of range by N s" or "past range by N s" beneath; green and red only outside the range (2026-10-05; replaced
