@@ -395,12 +395,16 @@ function renderMeetRoster(key,base){
  $('#rosterSub').textContent=`${fdate(m.date)} at ${courseShort(m.course)}. Expected times on meet day, grouped by race. Races are matched from grade and age as listed at meets, so check against actual entries.`
   +(m.temp?` ${m.temp.kind==='forecast'?'Forecast':'Typical'} ${m.temp.f}°F at the start${m.temp.f>62?`, which slows times about ${Math.round((m.temp.f-60)/10*D.meta.heat_per_10F*100)}%`:''}.`:'')
   +(m.new_course?' No results from this course yet, so times use the typical effect of races this long and ranges are wider.':'');
- const rows=[];base.forEach(r=>(r.upcoming||[]).filter(u=>u.date+'|'+u.meet===key).forEach(u=>rows.push({r,u})));
+ // athletes marked as not going (u.out, from the pipeline's entry list) go in their own section at the bottom
+ const all=[];base.forEach(r=>(r.upcoming||[]).filter(u=>u.date+'|'+u.meet===key).forEach(u=>all.push({r,u})));
+ const rows=all.filter(x=>!x.u.out),outs=all.filter(x=>x.u.out).sort((a,b)=>a.u.pred-b.u.pred);
  const ord=g=>m.races.findIndex(x=>g.startsWith(x));
  const groups=[...new Set(rows.map(x=>x.u.race))].sort((a,b)=>ord(a)-ord(b)||a.length-b.length);
- $('#rosterList').innerHTML=rows.length?groups.map(g=>`<li class="grp"><h3>${esc(g)}</h3></li>`+rows.filter(x=>x.u.race===g).sort((a,b)=>a.u.pred-b.u.pred).map(({r,u},i)=>`<li><button class="ranked" data-id="${esc(r.id)}"><span class="rk">${i+1}</span><span class="rn">${esc(r.name)}</span>
+ const outList=outs.length?`<li class="grp"><h3>Marked as not going</h3></li>`+outs.map(({r,u})=>`<li><button class="ranked" data-id="${esc(r.id)}"><span class="rk"></span><span class="rn">${esc(r.name)}</span>
+  <span class="rm">Expected time if they ran</span><span class="rt">${fmt(u.pred)}<small>${fmt(u.lo)} to ${fmt(u.hi)}</small></span></button></li>`).join(''):'';
+ $('#rosterList').innerHTML=(rows.length?'':empty)+(rows.length?groups.map(g=>`<li class="grp"><h3>${esc(g)}</h3></li>`+rows.filter(x=>x.u.race===g).sort((a,b)=>a.u.pred-b.u.pred).map(({r,u},i)=>`<li><button class="ranked" data-id="${esc(r.id)}"><span class="rk">${i+1}</span><span class="rn">${esc(r.name)}</span>
   <span class="rm">${u.place?`About ${nth(u.place)} of ${u.field} (vs ${u.field_year} field). `:''}${u.pr?'Course best '+fmtT(u.pr)+', '+Math.round(u.p_pr*100)+'% chance of a new one':'First race at this course and distance'}${u.unsure?'. Age group not certain':''}</span>
-  <span class="rt">${fmt(u.pred)}<small>${fmt(u.lo)} to ${fmt(u.hi)}</small></span></button></li>`).join('')).join(''):empty;
+  <span class="rt">${fmt(u.pred)}<small>${fmt(u.lo)} to ${fmt(u.hi)}</small></span></button></li>`).join('')).join(''):'')+outList;
  document.querySelectorAll('#rosterList button').forEach(b=>b.onclick=()=>{openRunner(b.dataset.id)});
 }
 document.querySelectorAll('#rosterFilters [data-g]').forEach(b=>b.onclick=()=>{G=b.dataset.g;document.querySelectorAll('#rosterFilters [data-g]').forEach(x=>x.setAttribute('aria-pressed',x===b));renderRoster()});
@@ -541,7 +545,7 @@ const fxTiles=f=>{if(!f)return'';const n=v=>{if(typeof v==='string')return v;con
  return `<span class="fx" aria-label="What moved this time, in seconds (plus is slower)">${f.map(([l,v,note])=>`<span>${l}<b>${n(v)}</b><small>${note}</small></span>`).join('')}</span>`};
 const fxTry=f=>{try{return fxTiles(f())}catch(e){return''}};   // tiles that can't be built never stop the page
 function upRow(u,r){return `<li><span class="ln">${esc(u.meet)}</span><span class="lm">${md(u.date)}, ${esc(u.race)}${u.unsure?' *':''}${u.new_course?' †':''}</span>
- <span class="lm">${u.place?`About ${nth(u.place)} of ${u.field}. `:''}${u.pr?`Course best ${fmtT(u.pr)}${pctTxt(u.p_pr)}`:'First race at this course and distance'}</span>
+ <span class="lm">${u.out?'Marked as not going. ':''}${u.place?`About ${nth(u.place)} of ${u.field}. `:''}${u.pr?`Course best ${fmtT(u.pr)}${pctTxt(u.p_pr)}`:'First race at this course and distance'}</span>
  ${r?fxTry(()=>fxNext(r,u)):''}<span class="lt">${fmt(u.pred)}<small>${fmt(u.lo)} to ${fmt(u.hi)}</small></span></li>`}
 function histList(r){
  const team=x=>x.team&&x.team!=='Delta Hawks'&&x.team!=='Unattached'?`, for ${esc(x.team)}`:'';
@@ -736,7 +740,7 @@ function renderReport(){
   <div class="chart rep-trend"><svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Median Hawk result against expected by meet">${g}</svg></div>`})():'';
  // next meet on the schedule, shown on the latest report
  const nx=m===repMeets[0]?[...sched].sort((a,b)=>a.date.localeCompare(b.date)).find(q=>q.date>m.date):null;
- const elig=nx?new Set(D.runners.filter(r=>r.active&&(r.upcoming||[]).some(u=>u.date===nx.date&&u.meet===nx.meet)).map(r=>r.id)).size:0;
+ const elig=nx?new Set(D.runners.filter(r=>r.active&&(r.upcoming||[]).some(u=>u.date===nx.date&&u.meet===nx.meet&&!u.out)).map(r=>r.id)).size:0;
  $('#repBody').innerHTML=`<h2>${esc(m.meet)}</h2>
  <p class="sub">${fdate(m.date)} at ${esc(courseShort(m.course))}${T!=null?`, ${T}°F at the start`:''}.</p>
  <p class="rep-sum" id="repSum">${esc(sum)}</p>
