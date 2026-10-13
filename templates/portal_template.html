@@ -212,6 +212,8 @@ td.rs,td.xr{line-height:1.2}td.rs small,td.xr small,td.tx small{display:block;fo
 .simbar{display:flex;height:30px;border-radius:6px;overflow:hidden;margin:8px 0 4px;border:1px solid var(--line)}
 .simbar span{display:flex;align-items:center;justify-content:center;white-space:nowrap;overflow:hidden;font:600 13px/1 var(--cond);letter-spacing:.03em;background:var(--panel);color:var(--ink);border-right:1px solid var(--line)}
 .simbar span:last-child{border-right:0}.simbar span.best{background:var(--hawk);color:var(--hawk-ink)}
+.simboth th.grp{text-align:center}.simboth td.pick{background:var(--hawk-row)}.simboth th.g2{display:none}
+@media (max-width:719px){.simboth th.g3{display:none}.simboth th.g2{display:table-cell}.simboth th,.simboth td{padding-left:6px;padding-right:6px}.simboth td small.sm{display:block}}
 .rep-race{margin-top:22px}
 .rep-race h4{margin:0;font:700 19px/1.2 var(--cond);letter-spacing:.01em}
 .rep-race .rh{display:flex;flex-wrap:wrap;gap:2px 14px;align-items:baseline;margin-bottom:8px}
@@ -773,7 +775,7 @@ try{meetView(localStorage.getItem('dh_meetview')==='results'?'results':'report')
 let SG='M';
 function renderSim(){
  const S=(D.sims||[])[0];if(!S)return;document.querySelector('nav [data-tab="sim"]').hidden=false;
- const pct=v=>Math.round(v*100)+'%',sh=S.shift||{},pl=a=>`${nth(a[0])} to ${nth(a[2])}`;
+ const pct=v=>(v<1&&v>=.995?99:v>0&&v<.005?0:Math.round(v*100))+'%',sh=S.shift||{},pl=a=>`${nth(a[0])} to ${nth(a[2])}`;
  const races=S.races.filter(o=>o.gender===SG);
  const card=o=>{const hw=[...o.hawks].sort((a,b)=>a.place[1]-b.place[1]),t=o.team;
   const head=`<div class="rh"><h4>${esc(o.race)}</h4><span>${o.field} runners: ${o.entered} entered so far${hw.length?` plus ${hw.length} Hawk${hw.length>1?'s':''}`:''}${o.unknown?`, ${o.unknown} with no results yet`:''}</span></div>`;
@@ -787,10 +789,19 @@ function renderSim(){
   return `<div class="rep-race">${head}${team}<div class="scroll" style="margin-top:10px"><table><tr><th>Hawk</th><th class="n">Expected</th><th class="n">Likely place</th><th class="n lg">8 in 10 runs</th><th class="n">Top 10</th></tr>
   ${hw.map(h=>`<tr><td class="w"><a href="#" data-ath="${esc(h.id)}">${esc(h.name)}</a></td><td class="n tx">${fmt(h.pred)}<small>${fmt(h.lo)} to ${fmt(h.hi)}</small></td>
   <td class="n"><b>${nth(h.place[1])}</b><small class="sm">${pl(h.place)}</small></td><td class="n lg">${pl(h.place)}</td><td class="n">${pct(h.top10)}</td></tr>`).join('')}</table></div></div>`};
+ // too few Hawks of this gender to score as a team: each runner's projection in either race, assigned race shaded
+ const both=b=>{const R=b.races,short=r=>/Top Seven/.test(r)?'Top 7 race':'Open race';
+  return `<div class="rep-race"><div class="rh"><h4>Either race</h4><span>${b.hawks.length} Hawk${b.hawks.length>1?'s':''}: no team score, so each runner can choose. Shaded: the race on the Projections tab.</span></div>
+  <div class="scroll"><table class="simboth"><tr><th rowspan="2">Hawk</th><th class="n lg" rowspan="2">Expected</th>${R.map(r=>`<th colspan="3" class="grp g3">${short(r.race)} (of ${r.field})</th><th class="grp g2">${short(r.race).replace(' race','')} (of ${r.field})</th>`).join('')}</tr>
+  <tr>${R.map(()=>'<th class="n">Place</th><th class="n lg">8 in 10 runs</th><th class="n lg">Top 10</th>').join('')}</tr>
+  ${b.hawks.map(h=>`<tr><td class="w"><a href="#" data-ath="${esc(h.id)}">${esc(h.name)}</a></td><td class="n tx lg">${fmt(h.pred)}<small>${fmt(h.lo)} to ${fmt(h.hi)}</small></td>
+  ${R.map(r=>{const p=h.places[r.race],on=h.race===r.race?' pick':'';return `<td class="n${on}"><b>${nth(p.place[1])}</b><small class="sm">${pl(p.place)}</small><small class="sm">${pct(p.top10)} top 10</small></td><td class="n lg${on}">${pl(p.place)}</td><td class="n lg${on}">${pct(p.top10)}</td>`}).join('')}</tr>`).join('')}</table></div>
+  <p class="pk">Places count all ${b.hawks.length} of our ${SG==='M'?'boys':'girls'} in the same race. Entries so far: ${S.races.filter(o=>o.gender===SG).map(o=>`${o.entered} in the ${short(o.race)}`).join(', ')}.</p></div>`};
+ const B=(S.both||{})[SG];
  $('#simBody').innerHTML=`<h2>${esc(S.meet)}</h2>
  <p class="sub">${fdate(S.date)} at ${esc(courseShort(S.course))}. Each race simulated ${n0(S.runs)} times from the entries posted on athletic.net as of ${fdate(S.entries_as_of)}. Entries are still coming in, so the fields will change.</p>
  <div class="bar" id="simG"><button class="chip" data-g="M" aria-pressed="${SG==='M'}">Boys</button><button class="chip" data-g="F" aria-pressed="${SG==='F'}">Girls</button></div>
- ${races.map(card).join('')}
+ ${B?both(B):races.map(card).join('')}
  <h3>How this works</h3><div class="prose"><p>Every runner entered so far is projected with the same model as our runners, from their results on file${S.extra?`, including ${esc(S.extra)}`:''}. Entrants with no results are drawn from last year's runners in the same race and grade. Each run draws every runner's time from their likely range and scores the race: teams with 5 or more finishers score, the first 5 count, and the 6th and 7th push other teams' runners back a place (unofficial).</p>
  <p>The local league meets are tied to the rest of our results through only a few runners, so they can sit off scale. Runners with longer histories were used to line them up: our runners and others are shifted by ${['M','F'].filter(g=>sh[g]!=null).map(g=>`${(sh[g]*100).toFixed(1)}% for ${g==='M'?'boys':'girls'}`).join(' and ')}, the amount they appeared slow at last year's meet without it. Our race assignments follow the Projections tab. Team places are a guide, not a forecast; individual places are firmer.</p></div>`;
  document.querySelectorAll('#simG [data-g]').forEach(b=>b.onclick=()=>{SG=b.dataset.g;renderSim()});
