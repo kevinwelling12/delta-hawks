@@ -61,5 +61,7 @@ the sibling folder ../delta-hawks (private, not in git; read its CLAUDE.md for t
   meet with public entry lists). Per race: team place chances as a bar, median points with the 8-in-10 range, teams that
   usually finish ahead, and each Hawk's likely place, 8-in-10 place range and top-10 chance, with Boys/Girls chips. The
   Hawks in each race are the ones the Projections tab has there. Team scores unofficial, same rules as the meet report.
+  A gender with fewer than 5 Hawks going (D.sims[0].both) shows one 'Either race' table instead: each Hawk's place in both races,
+  the Projections tab's race shaded; on phones Expected and Top 10 fold into the place cell so it fits without sideways scrolling.
 - Don't call db.settings() with long-polling options: this SDK auto-detects by default and throws if forced.
 - Kevin prefers plain, direct writing: no em dashes, no filler.
