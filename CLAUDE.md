@@ -57,5 +57,9 @@ the sibling folder ../delta-hawks (private, not in git; read its CLAUDE.md for t
 - Projections tab, one meet: athletes grouped by race in the order of the meet's races in D.meta.schedule (the pipeline lists a
   split meet's top fields first), then a "Marked as not going" section for upcoming entries with out=true (the pipeline's entry
   list; 2026-10-11). Those entries keep an expected time but no place, and the meet report's "Next up" count leaves them out.
+- Simulation tab (2026-10-13, XC): shown only when the data has D.sims (the pipeline's scripts/meet_sim.py, for an upcoming
+  meet with public entry lists). Per race: team place chances as a bar, median points with the 8-in-10 range, teams that
+  usually finish ahead, and each Hawk's likely place, 8-in-10 place range and top-10 chance, with Boys/Girls chips. The
+  Hawks in each race are the ones the Projections tab has there. Team scores unofficial, same rules as the meet report.
 - Don't call db.settings() with long-polling options: this SDK auto-detects by default and throws if forced.
 - Kevin prefers plain, direct writing: no em dashes, no filler.
