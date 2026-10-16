@@ -54,6 +54,9 @@ the sibling folder ../delta-hawks (private, not in git; read its CLAUDE.md for t
   five % bands, which read as mixed signals when ranges differed in width). On phones the Expected column is hidden: "exp 7:47" sits under
   the time and the result line carries the range ("inside 6:42 to 9:02", "past 8:19 by 16 s"). Results past range (slower than likely) are for the coaches: hide them, or the
   report, if the 'family' role is ever added.
+- Mile pace (2026-10-16): clock time over the race distance ("5:38/mi"), under the time in the meet Results and Report tables
+  and in each race-history line on athlete pages. Distance from x.dist, else read from the race name (raceDist also reads
+  "2000 Meters"). Display only: the model's baseline stays the 1.5 mi Gibson Ranch equivalent.
 - Projections tab, one meet: athletes grouped by race in the order of the meet's races in D.meta.schedule (the pipeline lists a
   split meet's top fields first), then a "Marked as not going" section for upcoming entries with out=true (the pipeline's entry
   list; 2026-10-11). Those entries keep an expected time but no place, and the meet report's "Next up" count leaves them out.

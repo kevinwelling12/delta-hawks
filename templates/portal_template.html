@@ -516,7 +516,10 @@ const clockSecs=t=>{const m=String(t||'').trim().match(/^(?:(\d+):)?(\d+(?:\.\d+
 const raceDist=x=>{if(x.dist>0)return x.dist;const s=String(x.race||'');let m;
  if((m=s.match(/(\d+(?:\.\d+)?)\s*(?:mi\b|mile)/i)))return +m[1];
  if((m=s.match(/(\d+(?:\.\d+)?)\s*k\b/i)))return m[1]/1.609344;
- if((m=s.match(/(\d{3,5})\s*m\b/i)))return m[1]/1609.344;return null};
+ if((m=s.match(/(\d{3,5})\s*m(?:eters?|etres?)?\b/i)))return m[1]/1609.344;return null};
+// mile pace of a clock time over the race's distance ("5:42/mi"), blank when either can't be read
+const paceMi=(t,x)=>{const s=clockSecs(t),d=raceDist(x);return s&&d?fmt(s/d)+'/mi':''};
+const paceSm=(t,x)=>{const p=paceMi(t,x);return p?`<small>${p}</small>`:''};
 let CF=null;   // course factor at each course and distance, relative to the reference at that distance (as on the course ratings)
 const courseF=(c,d)=>{if(!CF){CF=new Map();const R=D.meta.riegel;D.runners.forEach(r=>{const lv=r.preds.find(p=>p.course===D.meta.ref_course&&Math.abs(p.dist-1.5)<.01);if(!lv)return;
   r.preds.forEach(p=>{const k=p.course+'|'+p.dist.toFixed(3);if(!CF.has(k))CF.set(k,p.pred/(lv.pred*Math.pow(p.dist/1.5,R)))})})}
@@ -561,7 +564,7 @@ function histList(r){
  const pbs=new Set();let run=null;r.races.slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(x=>{if(x.equiv_day>0&&(!run||x.equiv_day<run.equiv_day)){run=x;pbs.add(x)}});
  const badge=x=>!pbs.has(x)?'':x===run?'<abbr class="prb" title="Personal best: fastest 1.5 mi equivalent">PB</abbr>':'<abbr class="prb old" title="Personal best when it was run, since beaten">PB</abbr>';
  const row=x=>{const t=D.meta.meet_temps[x.date+'|'+x.meet];return `<li><span class="ln">${esc(x.meet)}</span><span class="lm">${fdate(x.date)}, ${esc(x.race)}${team(x)}</span>
- <span class="lm">Top ${Math.max(1,Math.round(100-x.pct+1))}%${t!=null?`, ${t}°F`:''}. 1.5 mi equivalent ${fmt(x.equiv_day)}</span>${fxTry(()=>fxRace(x))}
+ <span class="lm">Top ${Math.max(1,Math.round(100-x.pct+1))}%${t!=null?`, ${t}°F`:''}${(p=>p?`, ${p} pace`:'')(paceMi(x.time,x))}. 1.5 mi equivalent ${fmt(x.equiv_day)}</span>${fxTry(()=>fxRace(x))}
  <span class="lt">${badge(x)}${esc(x.time)}<small>${nth(+x.place)} of ${x.field}</small></span></li>`};
  const all=r.races.slice().reverse(),N=8;
  return `<ul class="list">${all.slice(0,N).map(row).join('')}</ul>`+(all.length>N?`<details class="more"><summary>${all.length-N} earlier race${all.length-N>1?'s':''}</summary><ul class="list">${all.slice(N).map(row).join('')}</ul></details>`:'');
@@ -608,7 +611,7 @@ function renderRace(){
  $('#raceFx').innerHTML=(()=>{try{const m=fxMeet(k);return m?fxTiles(m)+`<p class="sub" style="margin:6px 0 0">How much each factor slowed (+) or sped up (−) every runner in this race.</p>`:''}catch(e){return''}})();
  $('#raceNote').textContent=`${fdate(rows[0].date)}. ${rows[0].field} finishers, ${h.length} Hawks.`+(full?'':' Only part of the field is stored for this race (Hawks, or youth finishers in a road race).');
  const show=hawksOnly?h:rows;
- $('#raceTable').innerHTML='<tr><th class="n">Pl</th><th>Name</th><th>Yr</th><th class="lg">Team</th><th class="n">Time</th></tr>'+show.map(r=>`<tr class="${r.hawk?'hawk':''}"><td class="n">${r.place}</td><td class="w">${esc(r.name)}<span class="rm sm">${esc(r.team)}</span></td><td>${esc(r.yr)}</td><td class="lg">${esc(r.team)}</td><td class="n">${esc(r.time)}</td></tr>`).join('');
+ $('#raceTable').innerHTML='<tr><th class="n">Pl</th><th>Name</th><th>Yr</th><th class="lg">Team</th><th class="n">Time</th></tr>'+show.map(r=>`<tr class="${r.hawk?'hawk':''}"><td class="n">${r.place}</td><td class="w">${esc(r.name)}<span class="rm sm">${esc(r.team)}</span></td><td>${esc(r.yr)}</td><td class="lg">${esc(r.team)}</td><td class="n tx">${esc(r.time)}${paceSm(r.time,r)}</td></tr>`).join('');
 }
 $('#raceSel').onchange=renderRace;
 $('#hawksOnly').onclick=e=>{hawksOnly=!hawksOnly;e.currentTarget.setAttribute('aria-pressed',hawksOnly);renderRace()};
@@ -730,7 +733,7 @@ function renderReport(){
   return `<div class="rep-race"><div class="rh"><h4>${esc(x0.race)}</h4><span>${x0.field} finishers${win?`, winner ${esc(win.time)}`:''}${team?' · '+team:''}</span></div>
   <div class="scroll"><table><tr><th class="n">Pl</th><th>Hawk</th><th class="n">Time</th><th class="n lg">Expected</th><th class="n">Result</th><th class="n lg">Beat</th></tr>
   ${hs.map(o=>{return `<tr><td class="n">${o.x.place}</td><td class="w"><a href="#" data-ath="${esc(o.r.id)}">${esc(o.r.name)}</a><span class="rm">${repBadges(o)}</span>${o.rec?`<span class="rm">${o.rec} (unofficial)</span>`:''}${o.slow2?'<span class="rm">Second club race in a row past range</span>':''}</td>
-  <td class="n tx">${esc(o.x.time)}${o.e?`<small class="sm">exp ${fmt(o.e.exp)}</small>`:''}</td><td class="n xr lg">${o.e?`${fmt(o.e.exp)}<small>likely ${fmt(o.e.lo)} to ${fmt(o.e.hi)}</small>`:''}</td><td class="n rs ${o.rcls||''}">${o.e?`${o.res}<small class="lg">${o.where}</small><small class="sm">${o.whereR}</small>`:''}</td>
+  <td class="n tx">${esc(o.x.time)}${paceSm(o.x.time,o.x)}${o.e?`<small class="sm">exp ${fmt(o.e.exp)}</small>`:''}</td><td class="n xr lg">${o.e?`${fmt(o.e.exp)}<small>likely ${fmt(o.e.lo)} to ${fmt(o.e.hi)}</small>`:''}</td><td class="n rs ${o.rcls||''}">${o.e?`${o.res}<small class="lg">${o.where}</small><small class="sm">${o.whereR}</small>`:''}</td>
   <td class="n lg">${o.x.pct!=null?Math.round(o.x.pct)+'%':''}</td></tr>`}).join('')}</table></div>
   ${n5>=2?`<p class="pk">Hawks pack: ${fmt(Math.max(...secs.slice(0,n5))-Math.min(...secs))} from 1st to ${nth(n5)} Hawk.</p>`:''}</div>`}).join('');
  // season trend: the median Hawk vs expected at each meet this season
