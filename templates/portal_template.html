@@ -773,7 +773,7 @@ document.querySelectorAll('#meetView [data-v]').forEach(b=>b.onclick=()=>meetVie
 try{renderReport()}catch(e){$('#repBody').innerHTML='<p class="sub">The report could not be built for this meet.</p>';console.error(e)}
 try{meetView(localStorage.getItem('dh_meetview')==='results'?'results':'report')}catch(e){meetView('report')}
 
-// simulation: the upcoming meet's races from the public entry lists, simulated by the pipeline (scripts/meet_sim.py, D.sims).
+// simulation: the upcoming meet's races from the public entry lists (or assumed lineups, S.assumed + S.note), simulated by the pipeline (scripts/meet_sim.py, D.sims).
 // The Hawks in each race are the ones the Projections tab has there (entries list and split applied).
 let SG='M';
 function renderSim(){
@@ -781,7 +781,7 @@ function renderSim(){
  const pct=v=>(v<1&&v>=.995?99:v>0&&v<.005?0:Math.round(v*100))+'%',sh=S.shift||{},pl=a=>`${nth(a[0])} to ${nth(a[2])}`;
  const races=S.races.filter(o=>o.gender===SG);
  const card=o=>{const hw=[...o.hawks].sort((a,b)=>a.place[1]-b.place[1]),t=o.team;
-  const head=`<div class="rh"><h4>${esc(o.race)}</h4><span>${o.field} runners: ${o.entered} from other teams${S.final?'':' so far'}${hw.length?` plus ${hw.length} Hawk${hw.length>1?'s':''}`:''}${o.unknown?`, ${o.unknown} with no results yet`:''}</span></div>`;
+  const head=`<div class="rh"><h4>${esc(o.race)}</h4><span>${o.field} runners: ${o.entered} ${S.assumed?'assumed from other teams':'from other teams'+(S.final?'':' so far')}${hw.length?` plus ${hw.length} Hawk${hw.length>1?'s':''}`:''}${o.unknown?`, ${o.unknown} with no results yet`:''}</span></div>`;
   if(!hw.length)return `<div class="rep-race">${head}<p class="sub">No Hawks in this race on the Projections tab.</p></div>`;
   let team='';
   if(t){const ks=Object.keys(t.place).map(Number).sort((a,b)=>a-b),best=ks.reduce((a,b)=>t.place[b]>t.place[a]?b:a,ks[0]);
@@ -802,7 +802,7 @@ function renderSim(){
   <p class="pk">Places count all ${b.hawks.length} of our ${SG==='M'?'boys':'girls'} in the same race. ${S.final?'Final entries':'Entries so far'}: ${S.races.filter(o=>o.gender===SG).map(o=>`${o.entered} in the ${short(o.race)}`).join(', ')}.</p></div>`};
  const B=(S.both||{})[SG];
  $('#simBody').innerHTML=`<h2>${esc(S.meet)}</h2>
- <p class="sub">${fdate(S.date)} at ${esc(courseShort(S.course))}. Each race simulated ${n0(S.runs)} times from the ${S.final?'final ':''}entries posted on athletic.net${S.final?'':` as of ${fdate(S.entries_as_of)}`}.${S.final?'':' Entries are still coming in, so the fields will change.'}</p>
+ <p class="sub">${fdate(S.date)} at ${esc(courseShort(S.course))}. Each race simulated ${n0(S.runs)} times ${S.assumed?`from assumed lineups: the entry lists are not public${S.note?`, so ${esc(S.note)}`:''}. Treat places and team scores as a rough guide.`:`from the ${S.final?'final ':''}entries posted on athletic.net${S.final?'':` as of ${fdate(S.entries_as_of)}`}.${S.final?'':' Entries are still coming in, so the fields will change.'}`}</p>
  <div class="bar" id="simG"><button class="chip" data-g="M" aria-pressed="${SG==='M'}">Boys</button><button class="chip" data-g="F" aria-pressed="${SG==='F'}">Girls</button></div>
  ${B?both(B):races.map(card).join('')}
  <h3>How this works</h3><div class="prose"><p>Every runner entered so far is projected with the same model as our runners, from their results on file${S.extra?`, including ${esc(S.extra)}`:''}. Entrants with no results are drawn from last year's runners in the same race and grade. Each run draws every runner's time from their likely range and scores the race: teams with 5 or more finishers score, the first 5 count, and the 6th and 7th push other teams' runners back a place (unofficial).</p>
