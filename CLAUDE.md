@@ -66,5 +66,13 @@ the sibling folder ../delta-hawks (private, not in git; read its CLAUDE.md for t
   Hawks in each race are the ones the Projections tab has there. Team scores unofficial, same rules as the meet report.
   A gender with fewer than 5 Hawks going (D.sims[0].both) shows one 'Either race' table instead: each Hawk's place in both races,
   the Projections tab's race shaded; on phones Expected and Top 10 fold into the place cell so it fits without sideways scrolling.
+- Live tab (2026-10-21, XC): meet-day results straight from the timer when the data has D.live (the pipeline's scripts/live_setup.py,
+  for a meet timed by RaceResult). Shown from the day before to the day after the meet; on meet day the portal opens on it. The viewer's
+  browser polls the public RaceResult API (CORS open to any origin) every 20 s while the tab is open and the page visible: results/config
+  for the key, one results list for every race (contest=0; a single-contest request returns 404 when the list is defined across
+  contests), split by race group, and each unfinished Hawk's details/view for the latest split (with the place at that split). Each Hawk
+  row: place, time, seconds against the Projections tab's expected time (green or red outside the 80% range), Course best badge, or the
+  split while on course. Team score so far is unofficial (teams with 5+ in, first 7 hold places). No athlete data is stored here.
+  Simulation tab: S.src names where entries came from (default athletic.net).
 - Don't call db.settings() with long-polling options: this SDK auto-detects by default and throws if forced.
 - Kevin prefers plain, direct writing: no em dashes, no filler.
