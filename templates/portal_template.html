@@ -833,7 +833,7 @@ async function liveFetch(){if(!L||LV.busy)return;LV.busy=true;const ev=L.event,s
   // one request for every race (the list is defined across contests); rows are split by the race group they sit in
   const j=await J(`${srv}/${ev}/results/list?key=${LV.key}&listname=${encodeURIComponent(LV.list)}&page=results&contest=0&r=all&l=0`);
   const F=j.DataFields||[],ix=re=>F.findIndex(f=>re.test(f)),it=F.map((f,i)=>/finish|time|gun|chip/i.test(f)?i:-1).filter(i=>i>=0).pop();
-  const c={id:ix(/^ID$/i),rk:ix(/rank/i),club:ix(/^CLUB$/i),con:ix(/contest/i)},byName={};Object.entries(LV.cn).forEach(([k,v])=>byName[v]=+k);
+  const c={id:ix(/^ID$/i),rk:ix(/rank/i),club:ix(/^(CLUB|PublicTeamName)$/i),con:ix(/contest/i)},byName={};Object.entries(LV.cn).forEach(([k,v])=>byName[v]=+k);
   const rows={};L.races.forEach(r=>rows[r.contest]=[]);
   if(it!=null)Object.entries(j.data||{}).forEach(([g,v])=>{const gc=byName[g.replace(/^#\d+_/,'')];
    lvRows(v).forEach(a=>{const k=c.con>=0?byName[a[c.con]]:gc,t=tsec(a[it]);if(rows[k]&&t!=null)rows[k].push({pid:+a[c.id],rank:parseInt(a[c.rk]),club:a[c.club]||'',ts:a[it],t})})});
