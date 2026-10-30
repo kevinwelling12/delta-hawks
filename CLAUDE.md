@@ -8,9 +8,9 @@ the sibling folder ../delta-hawks (private, not in git; read its CLAUDE.md for t
   defers the portal's script until src/gate.js has signed the user in and loaded the data.
 - Firestore: members/{email lowercase} {role: admin|coach, name, added, by}; portals/{xc|track}
   {version, chunks, bytes, as_of, updated}; portals/{key}/chunks/NNN {data: gzipped JSON bytes}.
-  Rules in firestore.rules (publish them in the Firebase console after editing). 'family' role is
-  reserved: before adding it, decide what families see (own runner only, or team views with first
-  name + last initial) and split the data so the rules can enforce it.
+  Rules in firestore.rules (publish them in the Firebase console after editing). 'family' role:
+  designed in docs/family-view.md (2026-10-30: own runner first, team views with full names, no model
+  numbers, no Live tab, one model-free portals/xc-family document), not built yet.
 - Test: no Java on the Mac, so no Firestore emulator. Two checks after any gate change:
   1. Real SDK: load the built page (or the live site) in Playwright WebKit (desktop and iPhone) and
      confirm the sign-in card appears with no page errors. A stub Firebase missed a settings() call
