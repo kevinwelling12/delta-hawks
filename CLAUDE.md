@@ -74,5 +74,9 @@ the sibling folder ../delta-hawks (private, not in git; read its CLAUDE.md for t
   row: place, time, seconds against the Projections tab's expected time (green or red outside the 80% range), Course best badge, or the
   split while on course. Team score so far is unofficial (teams with 5+ in, first 7 hold places). No athlete data is stored here.
   Simulation tab: S.src names where entries came from (default athletic.net).
+- Course maps (2026-10-31, XC Projections tab): when D.course_maps has the selected meet (the pipeline's scripts/course_maps.py),
+  a collapsed "Course maps" section sits under the meet's line, one course at a time by chip (label and age groups), with
+  length, climb and high point, the SVG map and elevation profile from the pipeline, and the source note. The SVGs carry cm-*
+  classes styled here (route yellow on a fixed dark edge in both themes; trails and text from the theme variables).
 - Don't call db.settings() with long-polling options: this SDK auto-detects by default and throws if forced.
 - Kevin prefers plain, direct writing: no em dashes, no filler.
