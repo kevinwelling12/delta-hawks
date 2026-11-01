@@ -68,5 +68,9 @@ the sibling folder ../delta-hawks (private, not in git; read its CLAUDE.md for t
   the Projections tab's race shaded; on phones Expected and Top 10 fold into the place cell so it fits without sideways scrolling.
 - Live tab: added 2026-10-21 (web PR #24), used at Flat SAC 2026, removed 2026-10-24 at Kevin's request; the code is in git history.
   Simulation tab: S.src names where entries came from (default athletic.net).
+- Course maps (2026-10-31, XC Projections tab): when D.course_maps has the selected meet (the pipeline's scripts/course_maps.py),
+  a collapsed "Course maps" section sits under the meet's line, one course at a time by chip (label and age groups), with
+  length, climb and high point, the SVG map and elevation profile from the pipeline, and the source note. The SVGs carry cm-*
+  classes styled here (route yellow on a fixed dark edge in both themes; trails and text from the theme variables).
 - Don't call db.settings() with long-polling options: this SDK auto-detects by default and throws if forced.
 - Kevin prefers plain, direct writing: no em dashes, no filler.

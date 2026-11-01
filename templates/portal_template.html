@@ -212,6 +212,17 @@ td.rs,td.xr{line-height:1.2}td.rs small,td.xr small,td.tx small{display:block;fo
 .simbar{display:flex;height:30px;border-radius:6px;overflow:hidden;margin:8px 0 4px;border:1px solid var(--line)}
 .simbar span{display:flex;align-items:center;justify-content:center;white-space:nowrap;overflow:hidden;font:600 13px/1 var(--cond);letter-spacing:.03em;background:var(--panel);color:var(--ink);border-right:1px solid var(--line)}
 .simbar span:last-child{border-right:0}.simbar span.best{background:var(--hawk);color:var(--hawk-ink)}
+/* course maps (Projections tab, D.course_maps): SVGs from the pipeline, colored here so both themes apply */
+.cmw{margin:4px 0 18px;max-width:560px}.cmw summary{cursor:pointer;font:700 18px/1.3 var(--cond);letter-spacing:.02em;padding:4px 0}
+.cmw .bar{margin:10px 0 6px}.cmw .chip small{font:500 13px/1 var(--body);text-transform:none;letter-spacing:0;margin-left:6px;color:var(--muted)}
+.cm-map{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:8px;margin-top:8px}.cm-prof{width:100%;height:auto;display:block;margin-top:6px}
+.cm-bg{fill:var(--panel)}.cm-water{fill:rgba(96,160,210,.45)}.cm-lot{fill:var(--line)}
+.cm-road{fill:none;stroke:var(--muted);opacity:.55}.cm-trail{fill:none;stroke:var(--muted);opacity:.5;stroke-linecap:round;stroke-linejoin:round}
+.cm-case{fill:none;stroke:#1C1C1C;stroke-linecap:round;stroke-linejoin:round}.cm-route{fill:none;stroke:#EDF737;stroke-linecap:round;stroke-linejoin:round}.cm-arrow{fill:#272727}
+.cm-km circle{fill:#272727;stroke:#EDF737}.cm-km text{fill:#EDF737;font-weight:700;font-family:var(--cond);text-anchor:middle}
+.cm-sf rect,.cm-hi polygon,.cm-north polygon{fill:var(--ink)}.cm-sf text,.cm-hi text{fill:var(--ink);font-weight:700;font-family:var(--cond);letter-spacing:.03em;paint-order:stroke;stroke:var(--panel);stroke-linejoin:round}
+.cm-north text,.cm-scale text{fill:var(--ink);font-weight:700;font-family:var(--cond);text-anchor:middle}.cm-scale path{fill:none;stroke:var(--ink)}
+.cm-grid{stroke:var(--line)}.cm-ax{fill:var(--muted);font:11px var(--body)}.cm-area{fill:#EDF737;opacity:.4}.cm-pline{fill:none;stroke:var(--ink);stroke-width:2}
 .simboth th.grp{text-align:center}.simboth td.pick{background:var(--hawk-row)}.simboth th.g2{display:none}
 @media (max-width:719px){.simboth th.g3{display:none}.simboth th.g2{display:table-cell}.simboth th,.simboth td{padding-left:6px;padding-right:6px}.simboth td small.sm{display:block}}
 .rep-race{margin-top:22px}
@@ -244,6 +255,7 @@ input.tin[aria-invalid="true"]{border-color:#B3261E;box-shadow:inset 0 0 0 1px #
  <div class="bar"><label for="meetSel" class="sub" style="margin:0">Expected at</label><select id="meetSel"></select></div>
  <h2 id="rosterTitle"></h2>
  <p class="sub" id="rosterSub"></p>
+ <div id="rosterMaps"></div>
  <div class="bar" id="rosterFilters">
   <button class="chip" data-g="F" aria-pressed="true">Girls</button>
   <button class="chip" data-g="M" aria-pressed="false">Boys</button>
@@ -386,6 +398,7 @@ function renderRoster(){
  const key=$('#meetSel').value,base=D.runners.filter(r=>r.gender===G&&(!season||r.active));
  $('#noResults').textContent=season&&noRes.length?`On the 2026 roster with no results yet: ${noRes.join(', ')}.`:'';
  if(key){renderMeetRoster(key,base);return}
+ $('#rosterMaps').innerHTML='';
  $('#rosterTitle').textContent='Expected 1.5 mile times';
  $('#rosterSub').textContent=`Each athlete's expected time on the ${REF} course (Flat SAC) if they raced today. Tap a name for details.`;
  const list=base.sort((a,b)=>a.rating-b.rating);
@@ -397,12 +410,24 @@ function renderRoster(){
   :empty;
  document.querySelectorAll('#rosterList button').forEach(b=>b.onclick=()=>{openRunner(b.dataset.id)});
 }
+// course maps for the selected meet (pipeline: scripts/course_maps.py, D.course_maps), one course at a time
+let CMsel=0,CMopen=false;
+function renderMaps(m){const el=$('#rosterMaps'),C=(D.course_maps||[]).find(x=>x.meet===m.meet&&x.date===m.date);
+ if(!C){el.innerHTML='';return}
+ const i=Math.min(CMsel,C.maps.length-1),c=C.maps[i];
+ el.innerHTML=`<details class="cmw"${CMopen?' open':''}><summary>Course maps: ${C.maps.map(x=>esc(x.label)).join(', ')}</summary>
+ <div class="bar" id="cmChips">${C.maps.map((x,k)=>`<button class="chip" data-k="${k}" aria-pressed="${k===i}">${esc(x.label)}<small>${esc(x.races)}</small></button>`).join('')}</div>
+ <p class="pk">${esc(c.label)} course (${esc(c.races)}): ${c.dist_m.toLocaleString('en-US')} m on the trail map, ${c.gain_ft} ft of climbing, high point ${c.high_ft} ft. Arrows show the direction; trails run both ways show as two lanes.</p>
+ ${c.map}${c.profile}<p class="pk">${esc(C.source)}</p></details>`;
+ el.querySelector('details').ontoggle=e=>{CMopen=e.target.open};
+ el.querySelectorAll('#cmChips [data-k]').forEach(b=>b.onclick=()=>{CMsel=+b.dataset.k;CMopen=true;renderMaps(m)})}
 function renderMeetRoster(key,base){
  const m=sched.find(x=>meetKey(x)===key);
  $('#rosterTitle').textContent=m.meet;
  $('#rosterSub').textContent=`${fdate(m.date)} at ${courseShort(m.course)}. Expected times on meet day, grouped by race. Races are matched from grade and age as listed at meets, so check against actual entries.`
   +(m.temp?` ${m.temp.kind==='forecast'?'Forecast':'Typical'} ${m.temp.f}°F at the start${m.temp.f>62?`, which slows times about ${Math.round((m.temp.f-60)/10*D.meta.heat_per_10F*100)}%`:''}.`:'')
   +(m.new_course?' No results from this course yet, so times use the typical effect of races this long and ranges are wider.':'');
+ renderMaps(m);
  // athletes marked as not going (u.out, from the pipeline's entry list) go in their own section at the bottom
  const all=[];base.forEach(r=>(r.upcoming||[]).filter(u=>u.date+'|'+u.meet===key).forEach(u=>all.push({r,u})));
  const rows=all.filter(x=>!x.u.out),outs=all.filter(x=>x.u.out).sort((a,b)=>a.u.pred-b.u.pred);
