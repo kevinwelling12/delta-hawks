@@ -72,5 +72,14 @@ the sibling folder ../delta-hawks (private, not in git; read its CLAUDE.md for t
   a collapsed "Course maps" section sits under the meet's line, one course at a time by chip (label and age groups), with
   length, climb and high point, the SVG map and elevation profile from the pipeline, and the source note. The SVGs carry cm-*
   classes styled here (route yellow on a fixed dark edge in both themes; trails and text from the theme variables).
+- Multi-distance meets (2026-11-02, XC Projections tab): a schedule entry with multi (the pipeline's Multi=Y, first used for the
+  Delta Hawks and Buffalo Chips Team Challenge) shows one table per gender, one row per athlete, a column per distance (shortest
+  first, with its start time from m.starts), each with the expected time, 8 in 10 range and course best; no places. Phones hide the
+  rank column so it fits 390 px. Course PRs for such a meet: a column for every distance the roster has raced on the course, exact
+  distances only. The runner page lists each distance as its own upcoming row with "Distance not set yet".
+- Unofficial results (x.unof / y.unof, from the pipeline's data/unofficial_results.csv, watch times): an "Unofficial" badge in race
+  history, "(unofficial)" in the Meets selectors, a note on the results and report views, no place when none was recorded, no team
+  score, no "field ran fast/slow" figure, and left out of Records, course bests (report badge and Course PRs) and the course
+  ratings' finish counts.
 - Don't call db.settings() with long-polling options: this SDK auto-detects by default and throws if forced.
 - Kevin prefers plain, direct writing: no em dashes, no filler.
