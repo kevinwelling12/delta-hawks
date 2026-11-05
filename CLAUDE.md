@@ -1,7 +1,9 @@
 # CLAUDE.md: Delta Hawks web portals
 
 Public repo. Never add athlete data, names, CSV or JSON data files here. The data pipeline lives in
-the sibling folder ../delta-hawks (private, not in git; read its CLAUDE.md for the model and data).
+the private repo kevinwelling12/delta-hawks-pipeline (on the Mac, a clone in the sibling folder ../delta-hawks;
+read its CLAUDE.md for the model and data). Its "Update portal" GitHub Actions workflow checks out this repo for the
+templates, rebuilds and publishes the data, so a template change merged to main is used by the next data run.
 
 - templates/: the portal pages, the single source for both builds. The claude.ai build injects data
   with ../delta-hawks/scripts/build_portal.py; this repo's build.py leaves the data block empty and
