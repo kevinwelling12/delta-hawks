@@ -50,6 +50,7 @@ def build(template, key, out):
     html = re.sub(r'(<body[^>]*>)', lambda m: m.group(1) + '\n' + src('gate.html'), html, count=1)
     if key == 'xc':   # admin-only Course PRs view on the Projections tab (src/course_prs.js); runs after the portal script
         html = html.replace('</body>', '<script type="text/x-dh-app">' + src('course_prs.js') + '</script>\n</body>', 1)
+        html = html.replace('</body>', '<script type="text/x-dh-app">' + src('entries.js') + '</script>\n</body>', 1)   # admins: Who's going
     html = html.replace('</body>', '<script>' + src('gate.js') + '</script>\n</body>', 1)
     dest = root / 'dist' / out
     dest.parent.mkdir(exist_ok=True)
