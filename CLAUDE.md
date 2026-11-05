@@ -10,7 +10,9 @@ templates, rebuilds and publishes the data, so a template change merged to main 
   defers the portal's script until src/gate.js has signed the user in and loaded the data.
 - Firestore: members/{email lowercase} {role: admin|coach, name, added, by}; portals/{xc|track}
   {version, chunks, bytes, as_of, updated}; portals/{key}/chunks/NNN {data: gzipped JSON bytes}.
-  Rules in firestore.rules (publish them in the Firebase console after editing). 'family' role is
+  entries/{date|meet} {meet, date, going: {Name: yes|no|maybe|''}, updated, by} (Who's going, below).
+  Rules in firestore.rules: the pipeline's workflow publishes them (scripts/deploy_rules.py) on its next rebuild after a merge to
+  main, so no trip to the Firebase console; trigger "Update portal" by hand to publish them sooner. 'family' role is
   reserved: before adding it, decide what families see (own runner only, or team views with first
   name + last initial) and split the data so the rules can enforce it.
 - Test: no Java on the Mac, so no Firestore emulator. Two checks after any gate change:
@@ -83,5 +85,11 @@ templates, rebuilds and publishes the data, so a template change merged to main 
   history, "(unofficial)" in the Meets selectors, a note on the results and report views, no place when none was recorded, no team
   score, no "field ran fast/slow" figure, and left out of Records, course bests (report badge and Course PRs) and the course
   ratings' finish counts.
+- Who's going (2026-11-05, admins, XC web build only: src/entries.js): a "Who's going" button next to the Projections tab's meet
+  menu for upcoming meets opens a panel listing the 2026 roster (D.meta.roster, Girls/Boys/Others) with Yes, Maybe and No; a second
+  tap clears. Each tap writes entries/{date|meet} (merge). The pipeline's hourly check (scripts/sync_entries.py) copies it into
+  data/entries.csv, the app winning for every name it has set, and rebuilds only when something changed. The panel compares with
+  D.meta.entries (entries.csv as of the last rebuild) to show changes not in the projections yet. gate.js exposes DH_DB and DH_EMAIL.
+  Tested in Chromium (desktop and iPhone size) with a stub Firestore on real data; WebKit was not available in the cloud session.
 - Don't call db.settings() with long-polling options: this SDK auto-detects by default and throws if forced.
 - Kevin prefers plain, direct writing: no em dashes, no filler.

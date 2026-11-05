@@ -21,6 +21,13 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['role', 'name', 'added', 'by']);
       allow delete: if isAdmin() && email != myEmail();
     }
+    // Who's going at an upcoming meet, set by admins in the app (src/entries.js); the pipeline copies it into its entry list.
+    match /entries/{meet} {
+      allow read: if seesAll();
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(['meet', 'date', 'going', 'updated', 'by'])
+        && request.resource.data.going is map && request.resource.data.by == myEmail();
+    }
     match /portals/{portal} {
       allow read: if seesAll();
       allow write: if false;
