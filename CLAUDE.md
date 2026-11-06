@@ -64,6 +64,9 @@ templates, rebuilds and publishes the data, so a template change merged to main 
 - Projections tab, one meet: athletes grouped by race in the order of the meet's races in D.meta.schedule (the pipeline lists a
   split meet's top fields first), then a "Marked as not going" section for upcoming entries with out=true (the pipeline's entry
   list; 2026-10-11). Those entries keep an expected time but no place, and the meet report's "Next up" count leaves them out.
+  At a meet with races of different lengths (age groups, e.g. Nationals; 2026-11-06, Kevin) the not-going athletes are grouped
+  by the race they would have run ("Not going: 4000 Meters 13-14"), in the meet's race order; one whose age group is not certain
+  has entries in two races and shows once, under "A or B", with the expected time at each.
 - Simulation tab (2026-10-13, XC): shown only when the data has D.sims (the pipeline's scripts/meet_sim.py, for an upcoming
   meet with public entry lists). Per race: team place chances as a bar, median points with the 8-in-10 range, teams that
   usually finish ahead, and each Hawk's likely place, 8-in-10 place range and top-10 chance, with Boys/Girls chips. The
