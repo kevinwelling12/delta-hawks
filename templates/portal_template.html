@@ -440,8 +440,16 @@ function renderMeetRoster(key,base){
  const rows=all.filter(x=>!x.u.out),outs=all.filter(x=>x.u.out).sort((a,b)=>a.u.pred-b.u.pred);
  const ord=g=>m.races.findIndex(x=>g.startsWith(x));
  const groups=[...new Set(rows.map(x=>x.u.race))].sort((a,b)=>ord(a)-ord(b)||a.length-b.length);
- const outList=outs.length?`<li class="grp"><h3>Marked as not going</h3></li>`+outs.map(({r,u})=>`<li><button class="ranked" data-id="${esc(r.id)}"><span class="rk"></span><span class="rn">${esc(r.name)}</span>
-  <span class="rm">Expected time if they ran</span><span class="rt">${fmt(u.pred)}<small>${fmt(u.lo)} to ${fmt(u.hi)}</small></span></button></li>`).join(''):'';
+ // at a meet with several distances (age groups, e.g. Nationals) they are grouped by the race they would have run, in the meet's race order
+ // (an athlete whose age group is not certain can have an entry in two races of different lengths: one row, under "A or B")
+ const outRow=({r,u,us})=>`<li><button class="ranked" data-id="${esc(r.id)}"><span class="rk"></span><span class="rn">${esc(r.name)}</span>
+  <span class="rm">${us.length>1?'Age group not certain. Expected '+us.map(v=>`${fmt(v.pred)} at ${esc(v.race)}`).join(', '):'Expected time if they ran'}</span><span class="rt">${fmt(u.pred)}<small>${fmt(u.lo)} to ${fmt(u.hi)}</small></span></button></li>`;
+ const multiDist=new Set(all.map(x=>(+x.u.dist||0).toFixed(2))).size>1;
+ const outOne=[...outs.reduce((mp,x)=>{const o=mp.get(x.r.id);if(o)o.us.push(x.u);else mp.set(x.r.id,{r:x.r,u:x.u,us:[x.u]});return mp},new Map()).values()];
+ outOne.forEach(o=>{o.us.sort((a,b)=>ord(a.race)-ord(b.race));o.g=o.us.map(v=>v.race).join(' or ')});
+ const outGroups=[...new Set(outOne.map(o=>o.g))].sort((a,b)=>ord(a)-ord(b)||a.length-b.length);
+ const outList=!outs.length?'':multiDist?outGroups.map(g=>`<li class="grp"><h3>Not going: ${esc(g)}</h3></li>`+outOne.filter(o=>o.g===g).map(outRow).join('')).join('')
+  :`<li class="grp"><h3>Marked as not going</h3></li>`+outOne.map(outRow).join('');
  $('#rosterList').innerHTML=(rows.length?'':empty)+(rows.length?groups.map(g=>`<li class="grp"><h3>${esc(g)}</h3></li>`+rows.filter(x=>x.u.race===g).sort((a,b)=>a.u.pred-b.u.pred).map(({r,u},i)=>`<li><button class="ranked" data-id="${esc(r.id)}"><span class="rk">${i+1}</span><span class="rn">${esc(r.name)}</span>
   <span class="rm">${u.place?`About ${nth(u.place)} of ${u.field} (vs ${u.field_year} field). `:''}${u.pr?'Course best '+fmtT(u.pr)+', '+Math.round(u.p_pr*100)+'% chance of a new one':'First race at this course and distance'}${u.unsure?'. Age group not certain':''}</span>
   <span class="rt">${fmt(u.pred)}<small>${fmt(u.lo)} to ${fmt(u.hi)}</small></span></button></li>`).join('')).join(''):'')+outList;
