@@ -94,5 +94,8 @@ templates, rebuilds and publishes the data, so a template change merged to main 
   data/entries.csv, the app winning for every name it has set, and rebuilds only when something changed. The panel compares with
   D.meta.entries (entries.csv as of the last rebuild) to show changes not in the projections yet. gate.js exposes DH_DB and DH_EMAIL.
   Tested in Chromium (desktop and iPhone size) with a stub Firestore on real data; WebKit was not available in the cloud session.
+- design/: source files of the Delta Hawks design system artifact on claude.ai (tokens, brand book, component
+  previews; design/README.md has the link and how to rebuild it). After a change to the templates' colours, type or
+  components, update these files and republish them to the artifact.
 - Don't call db.settings() with long-polling options: this SDK auto-detects by default and throws if forced.
 - Kevin prefers plain, direct writing: no em dashes, no filler.

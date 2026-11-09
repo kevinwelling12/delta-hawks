@@ -1,0 +1,33 @@
+<!-- @dsCard height=320 -->
+<style>
+html,body{margin:0;background:var(--bg)}
+.cv{position:relative;width:960px;height:320px;overflow:hidden;background:var(--bg)}
+.cv svg{position:absolute;left:0;top:0}
+.y{fill:var(--hawk)}.c{fill:var(--hawk-ink)}.t{fill:var(--hawk-row)}.g{fill:var(--good)}
+.cy{fill:none;stroke:var(--hawk-ink);stroke-width:12;stroke-linecap:square;stroke-linejoin:miter}
+.cc{fill:none;stroke:var(--hawk);stroke-width:12;stroke-linecap:square;stroke-linejoin:miter}
+.sm{rx:var(--radius-md)}
+.txt{position:absolute;left:40px;bottom:36px;max-width:440px}
+.nm{margin:0;font:700 120px/.95 var(--font-cond);letter-spacing:.01em;color:var(--ink)}
+.tg{margin:12px 0 0;font:400 14px/1.4 var(--font-body);color:var(--muted)}
+</style>
+<div class="cv">
+<svg width="960" height="320" viewBox="0 0 960 320" aria-hidden="true">
+<!-- blocks: hawk 400x320 slab (bleeds top and bottom), hawk-ink 220x140 block, hawk-row 80x120 tint, good 40x40 tile (radius-md)
+     arrangement: one tall yellow slab on the right with charcoal and tint satellites on its left edge, like the header band meeting the page
+     pattern: chevrons, from the wing feathers of the club mark and the loud condensed uppercase labels; charcoal on yellow, yellow on charcoal
+     steps and radii: chevron pitch 40px (section), stroke 12px (row), satellites on 40px multiples, tile radius-md -->
+<rect class="t" x="480" y="0" width="80" height="120"/>
+<rect class="y" x="560" y="0" width="400" height="320"/>
+<rect class="c" x="480" y="180" width="220" height="140"/>
+<rect class="g sm" x="600" y="40" width="40" height="40"/>
+<path class="cy" d="M760 60 l40 40 l40 -40"/>
+<path class="cy" d="M760 100 l40 40 l40 -40"/>
+<path class="cy" d="M760 140 l40 40 l40 -40"/>
+<path class="cy" d="M760 180 l40 40 l40 -40"/>
+<path class="cy" d="M760 220 l40 40 l40 -40"/>
+<path class="cc" d="M520 230 l30 30 l30 -30"/>
+<path class="cc" d="M600 230 l30 30 l30 -30"/>
+</svg>
+<div class="txt"><p class="nm">Delta<br>Hawks</p><p class="tg">Hawk yellow on charcoal, condensed numbers, hairlines.</p></div>
+</div>
