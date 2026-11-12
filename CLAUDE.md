@@ -73,6 +73,7 @@ templates, rebuilds and publishes the data, so a template change merged to main 
   Hawks in each race are the ones the Projections tab has there. Team scores unofficial, same rules as the meet report.
   A gender with fewer than 5 Hawks going (D.sims[0].both) shows one 'Either race' table instead: each Hawk's place in both races,
   the Projections tab's race shaded; on phones Expected and Top 10 fold into the place cell so it fits without sideways scrolling.
+- Simulation tab note (2026-11-12): S.note shows after the entries sentence for posted entries too (CCC Nationals 2026), and the calibration paragraph names the league meets only when S.extra is set.
 - Live tab: added 2026-10-21 (web PR #24), used at Flat SAC 2026, removed 2026-10-24 at Kevin's request; the code is in git history.
   Simulation tab: S.src names where entries came from (default athletic.net).
 - Course maps (2026-10-31, XC Projections tab): when D.course_maps has the selected meet (the pipeline's scripts/course_maps.py),
