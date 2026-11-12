@@ -218,7 +218,7 @@ td.rs,td.xr{line-height:1.2}td.rs small,td.xr small,td.tx small{display:block;fo
 .simbar{display:flex;height:30px;border-radius:6px;overflow:hidden;margin:8px 0 4px;border:1px solid var(--line)}
 .simbar span{display:flex;align-items:center;justify-content:center;white-space:nowrap;overflow:hidden;font:600 13px/1 var(--cond);letter-spacing:.03em;background:var(--panel);color:var(--ink);border-right:1px solid var(--line)}
 .simbar span:last-child{border-right:0}.simbar span.best{background:var(--hawk);color:var(--hawk-ink)}
-/* course maps (Projections tab, D.course_maps): SVGs from the pipeline, colored here so both themes apply */
+/* course maps (Projections tab D.course_maps, Meets tab report D.course_maps_all): SVGs from the pipeline, colored here so both themes apply */
 .cmw{margin:4px 0 18px;max-width:560px}.cmw summary{cursor:pointer;font:700 18px/1.3 var(--cond);letter-spacing:.02em;padding:4px 0}
 .cmw .bar{margin:10px 0 6px}.cmw .chip small{font:500 13px/1 var(--body);text-transform:none;letter-spacing:0;margin-left:6px;color:var(--muted)}
 .cm-map{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:8px;margin-top:8px}.cm-prof{width:100%;height:auto;display:block;margin-top:6px}
@@ -416,17 +416,19 @@ function renderRoster(){
   :empty;
  document.querySelectorAll('#rosterList button').forEach(b=>b.onclick=()=>{openRunner(b.dataset.id)});
 }
-// course maps for the selected meet (pipeline: scripts/course_maps.py, D.course_maps), one course at a time
-let CMsel=0,CMopen=false;
-function renderMaps(m){const el=$('#rosterMaps'),C=(D.course_maps||[]).find(x=>x.meet===m.meet&&x.date===m.date);
+// course maps (pipeline: scripts/course_maps.py): D.course_maps per upcoming meet for the Projections tab,
+// D.course_maps_all one per course for the Meets tab report; one course at a time, chips switch
+const CMst={};
+function cmRender(el,C,id,pick){
  if(!C){el.innerHTML='';return}
- const i=Math.min(CMsel,C.maps.length-1),c=C.maps[i];
- el.innerHTML=`<details class="cmw"${CMopen?' open':''}><summary>Course maps: ${C.maps.map(x=>esc(x.label)).join(', ')}</summary>
- <div class="bar" id="cmChips">${C.maps.map((x,k)=>`<button class="chip" data-k="${k}" aria-pressed="${k===i}">${esc(x.label)}<small>${esc(x.races)}</small></button>`).join('')}</div>
+ const st=CMst[id]||(CMst[id]={sel:pick||0,open:false}),i=Math.min(st.sel,C.maps.length-1),c=C.maps[i];
+ el.innerHTML=`<details class="cmw"${st.open?' open':''}><summary>Course map${C.maps.length>1?'s':''}: ${C.maps.map(x=>esc(x.label)).join(', ')}</summary>
+ ${C.maps.length>1?`<div class="bar cmChips">${C.maps.map((x,k)=>`<button class="chip" data-k="${k}" aria-pressed="${k===i}">${esc(x.label)}<small>${esc(x.races)}</small></button>`).join('')}</div>`:''}
  <p class="pk">${esc(c.label)} course (${esc(c.races)}): ${c.dist_m.toLocaleString('en-US')} m on the trail map, ${c.gain_ft} ft of climbing, high point ${c.high_ft} ft. Arrows show the direction; trails run both ways show as two lanes.</p>
  ${c.map}${c.profile}<p class="pk">${esc(C.source)}</p></details>`;
- el.querySelector('details').ontoggle=e=>{CMopen=e.target.open};
- el.querySelectorAll('#cmChips [data-k]').forEach(b=>b.onclick=()=>{CMsel=+b.dataset.k;CMopen=true;renderMaps(m)})}
+ el.querySelector('details').ontoggle=e=>{st.open=e.target.open};
+ el.querySelectorAll('.cmChips [data-k]').forEach(b=>b.onclick=()=>{st.sel=+b.dataset.k;st.open=true;cmRender(el,C,id)})}
+function renderMaps(m){cmRender($('#rosterMaps'),(D.course_maps||[]).find(x=>x.meet===m.meet&&x.date===m.date),'p|'+m.date+'|'+m.meet)}
 function renderMeetRoster(key,base){
  const m=sched.find(x=>meetKey(x)===key);
  $('#rosterTitle').textContent=m.meet;
@@ -819,9 +821,14 @@ function renderReport(){
  ${rated.length||m.unof?'':`<p class="note">No expected times for this meet yet. They are added when the model runs (meet_reports.py), for meets since the start of last season.</p>`}
  <div class="kv">${kv.map(([b,s])=>`<div><b>${b}</b><span>${s}</span></div>`).join('')}</div>
  <h3>Race by race</h3><p class="sub">Hawks who ran for the Delta Hawks in each race. Expected is the projection each Hawk carried into the meet, shifted by how the rest of the race ran against theirs, so a hot or muddy day doesn't count against anyone. Past range means slower than the likely range: often a cramp, a fall or a cold, so ask before reading anything into it. Beat is the share of the field they finished ahead of.</p>${races}
+ <div id="repMaps"></div>
  ${trend}
  ${nx?`<h3>Next up</h3><p>${esc(nx.meet)}, ${fdate(nx.date)} at ${esc(courseShort(nx.course))}. ${elig} Hawk${elig===1?'':'s'} on the ${D.meta.as_of.slice(0,4)} roster with an expected time there${nx.temp?`, ${nx.temp.kind==='forecast'?'forecast':'typically'} ${nx.temp.f}°F at the start`:''}. Expected times and places are on the Projections tab.</p>`:''}`;
  document.querySelectorAll('#repBody a[data-ath]').forEach(a=>a.onclick=e=>{e.preventDefault();openRunner(a.dataset.ath)});
+ {const C=(D.course_maps_all||[]).find(x=>x.course===m.course);   // the map closest to the distance most Hawks ran here
+  let pick=0;if(C){const ds=rows.map(o=>{try{return raceDist(o.x)}catch(e){return null}}).filter(Boolean).sort((a,b)=>a-b),d=ds[ds.length>>1];
+   if(d)pick=C.maps.reduce((b,x,k)=>Math.abs(x.dist_m/1609.344-d)<Math.abs(C.maps[b].dist_m/1609.344-d)?k:b,0)}
+  cmRender($('#repMaps'),C,'r|'+m.key,pick)}
  $('#repCopy').onclick=()=>{const done=()=>$('#repCopied').textContent='Copied',sel=()=>{const g=document.createRange();g.selectNodeContents($('#repSum'));const w=getSelection();w.removeAllRanges();w.addRange(g);$('#repCopied').textContent='Selected. Copy it from the menu.'};
   try{navigator.clipboard.writeText(sum).then(done,sel)}catch(e){sel()}};
 }
