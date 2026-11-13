@@ -81,6 +81,10 @@ templates, rebuilds and publishes the data, so a template change merged to main 
   length, climb and high point, the SVG map and elevation profile from the pipeline, and the source note. The SVGs carry cm-*
   classes styled here (route yellow on a fixed dark edge in both themes; trails and text from the theme variables).
 - Course maps on the Meets tab (2026-11-12, Kevin): the Report view shows a collapsed "Course map" section under the race tables when D.course_maps_all has the meet's course (one entry per course from the pipeline, whatever the date: Flat SAC, American River College, Chico, Springview, Lagoon Valley, Bedwell, Cedarville). It opens on the map closest to the median distance the Hawks ran there. Both tabs share cmRender(el, C, id, pick) with per-view chip and open state.
+- Courses tab (2026-11-13, Kevin, after Meets; laid out like the high school apps): the course ratings moved here from Method.
+  One row per course and distance, fastest first: a bar centered on the reference (Gibson Ranch 1.5 mi), % faster or slower,
+  and "Time here" for the entered reference time in mild weather. Chips: this season's schedule (default), Hawks any year
+  (courses in D.results), All courses (every rated course); a search box filters by name or town. Choice kept in 'dh_crs'.
 - Multi-distance meets (2026-11-02, XC Projections tab): a schedule entry with multi (the pipeline's Multi=Y, first used for the
   Delta Hawks and Buffalo Chips Team Challenge) shows one table per gender, one row per athlete, a column per distance (shortest
   first, with its start time from m.starts), each with the expected time, 8 in 10 range and course best; no places. Phones hide the
