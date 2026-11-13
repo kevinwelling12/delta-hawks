@@ -590,7 +590,14 @@ const raceDist=x=>{if(x.dist>0)return x.dist;const s=String(x.race||'');let m;
  if((m=s.match(/(\d+(?:\.\d+)?)\s*k\b/i)))return m[1]/1.609344;
  if((m=s.match(/(\d{3,5})\s*m(?:eters?|etres?)?\b/i)))return m[1]/1609.344;return null};
 // mile pace of a clock time over the race's distance ("5:42/mi"), blank when either can't be read
-const paceMi=(t,x)=>{const s=clockSecs(t),d=raceDist(x);return s&&d?fmt(s/d)+'/mi':''};
+// courses measured from map data whose posted race distances are off (page display only; the model keeps the posted labels,
+// which predict better in the strict backtest): paces and distance labels there use the measured length, in meters
+const MEASURED={'American River College CA':1730};
+let MCO=null;   // date|meet -> course, for meet result rows (they carry no course)
+const courseOf=x=>{if(x.course)return x.course;if(!MCO){MCO=new Map();D.runners.forEach(r=>r.races.forEach(y=>MCO.set(y.date+'|'+y.meet,y.course)))}return MCO.get(x.date+'|'+x.meet)};
+const trueDist=x=>{const m=MEASURED[courseOf(x)];return m?m/1609.344:raceDist(x)};
+const distShow=(c,d)=>MEASURED[c]?`${MEASURED[c].toLocaleString()} m <small>(listed ${distLabel(d)})</small>`:distLabel(d);
+const paceMi=(t,x)=>{const s=clockSecs(t),d=trueDist(x);return s&&d?fmt(s/d)+'/mi':''};
 const paceSm=(t,x)=>{const p=paceMi(t,x);return p?`<small>${p}</small>`:''};
 let CF=null;   // course factor at each course and distance, relative to the reference at that distance (as on the course ratings)
 const courseF=(c,d)=>{if(!CF){CF=new Map();const R=D.meta.riegel;D.runners.forEach(r=>{const lv=r.preds.find(p=>p.course===D.meta.ref_course&&Math.abs(p.dist-1.5)<.01);if(!lv)return;
@@ -647,7 +654,7 @@ function predsByVenue(r){
  const raced=c=>r.races.filter(x=>x.course===c),last=c=>raced(c).map(x=>x.date).sort().pop()||'';
  const venues=[...v.keys()].sort((a,b)=>last(b).localeCompare(last(a))||courseShort(a).localeCompare(courseShort(b)));
  const block=c=>{const n=raced(c).length;return `<li class="grp"><h4>${esc(courseShort(c))}</h4><span class="lm">${n?`${n} race${n>1?'s':''}, last ${fdate(last(c))}`:'Not raced yet'}</span></li>`+
-  v.get(c).sort((a,b)=>a.dist-b.dist).map(p=>`<li><span class="ln">${distLabel(p.dist)}</span><span class="lm">${p.pr?`Course best ${fmtT(p.pr)}${pctTxt(p.p_pr)}`:'No course best yet'}</span><span class="lt">${fmt(p.pred)}<small>${fmt(p.lo)} to ${fmt(p.hi)}</small></span></li>`).join('')};
+  v.get(c).sort((a,b)=>a.dist-b.dist).map(p=>`<li><span class="ln">${distShow(p.course,p.dist)}</span><span class="lm">${p.pr?`Course best ${fmtT(p.pr)}${pctTxt(p.p_pr)}`:'No course best yet'}</span><span class="lt">${fmt(p.pred)}<small>${fmt(p.lo)} to ${fmt(p.hi)}</small></span></li>`).join('')};
  const mine=venues.filter(c=>raced(c).length),other=venues.filter(c=>!raced(c).length);
  return `<ul class="list">${mine.map(block).join('')}</ul>`+
   (other.length?`<details class="more"><summary>Other courses (${other.length})</summary><ul class="list">${other.map(block).join('')}</ul></details>`:'');
@@ -957,7 +964,7 @@ function renderCourses(){
   const when=o=>o.sched?o.sched.map(m=>`${m.up?'Next: ':''}${esc(m.meet)}, ${md(m.date)}`).join('. '):o.next?`Next: ${esc(o.next.meet)}, ${md(o.next.date)}`:'';
   $('#crsTable').innerHTML=`<tr><th>Course</th><th>vs ${esc(REF)}</th><th class="n">Time here</th></tr>`+(vis.length?vis.map(r=>{const o=r.o,l=loc(o.course),w=when(o);
    const sub=[l,isRef(r)?'Reference course':'',w].filter(Boolean).join(' &middot; ');
-   const name=`${esc(courseShort(o.course))}${r.d?` <b>${distLabel(r.d.dist)}</b>`:''}${sub?`<span class="rm">${sub}</span>`:''}`;
+   const name=`${esc(courseShort(o.course))}${r.d?` <b>${distShow(o.course,r.d.dist)}</b>`:''}${sub?`<span class="rm">${sub}</span>`:''}`;
    if(!r.d)return `<tr><td class="w">${name}</td><td class="cv"><small>No rating yet</small></td><td class="n">&ndash;</td></tr>`;
    const p=Math.round((r.d.f-1)*1000)/10,wd=Math.min(50,Math.abs(p)/span*50),eq=T*r.d.f*Math.pow(r.d.dist/1.5,R);
    const bar=`<span class="cbar" aria-hidden="true">${p?`<i class="${p<0?'f':'s'}" style="${p<0?`right:50%;width:${wd}%`:`left:50%;width:${wd}%`}"></i>`:''}</span>`;
