@@ -238,6 +238,14 @@ td.rs,td.xr{line-height:1.2}td.rs small,td.xr small,td.tx small{display:block;fo
 .rep-race .pk{color:var(--muted);font-size:13px;margin:6px 0 0}
 .rep-trend svg text{fill:var(--muted);font:500 12px var(--body)}
 input.tin{min-height:42px;width:6.5em;border:1px solid var(--ctl);border-radius:6px;padding:0 12px;font-size:16px;font-weight:600;background:var(--bg);font-variant-numeric:tabular-nums}
+/* Courses tab: each course and distance against the reference, bar centered on the reference */
+input.cq{min-height:42px;width:100%;max-width:20em;border:1px solid var(--ctl);border-radius:6px;padding:0 12px;font-size:16px;background:var(--bg)}
+#crsTable td{vertical-align:top}#crsTable td.w{min-width:10em;max-width:22em}#crsTable td.w b{white-space:nowrap}
+.cbar{position:relative;display:block;width:96px;height:12px;margin-top:4px;border-radius:3px;background:var(--line)}
+.cbar i{position:absolute;top:0;bottom:0;border-radius:3px}.cbar i.f{background:var(--hawk)}.cbar i.s{background:var(--faint)}
+.cbar::after{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--ink)}
+td.cv small{display:block;font-size:12px;color:var(--muted);margin-top:3px;white-space:nowrap}
+@media (max-width:430px){.cbar{width:72px}#crsTable td.w{min-width:8em}}
 input.tin[aria-invalid="true"]{border-color:#B3261E;box-shadow:inset 0 0 0 1px #B3261E}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -250,6 +258,7 @@ input.tin[aria-invalid="true"]{border-color:#B3261E;box-shadow:inset 0 0 0 1px #
  <button role="tab" aria-selected="true" data-tab="roster">Projections</button>
  <button role="tab" aria-selected="false" data-tab="runner">Athletes</button>
  <button role="tab" aria-selected="false" data-tab="meets">Meets</button>
+ <button role="tab" aria-selected="false" data-tab="courses">Courses</button>
  <button role="tab" aria-selected="false" data-tab="sim" hidden>Simulation</button>
  <button role="tab" aria-selected="false" data-tab="records">Records</button>
  <button role="tab" aria-selected="false" data-tab="alumni">Alumni</button>
@@ -320,7 +329,9 @@ input.tin[aria-invalid="true"]{border-color:#B3261E;box-shadow:inset 0 0 0 1px #
  <ul class="alum" id="alumList"></ul>
 </section>
 
-<section id="model" role="tabpanel"><div class="prose" id="modelBody"></div><div id="courseBody"></div></section>
+<section id="courses" role="tabpanel"><h2>Courses</h2><div id="courseBody"></div></section>
+
+<section id="model" role="tabpanel"><div class="prose" id="modelBody"></div></section>
 </main>
 <footer class="foot"><p id="updated" style="margin:0"></p><p id="disclaimer" style="margin:6px 0 0">All results come from public sources (athletic.net, timing company results pages and meet results) and remain the property of their owners.</p></footer>
 
@@ -892,7 +903,7 @@ $('#modelBody').innerHTML=`<h2>How the numbers work</h2>
 <div><b>${pct(M.growth_per_year)}</b><span>Typical yearly pace improvement, from ${n0(M.n_growth)} kids seen in more than one season</span></div></div>
 <h3>Steps</h3>
 <p>Every time is scaled to 1.5 miles. Kids fade more over longer races than adults do, so the scaling is measured from the data: race time grows with distance to the power ${M.riegel}. The adult rule of thumb is 1.06.</p>
-<p>${REF}, home of the Flat SAC meet and raced at 1.5 mi every season since 2019, is the reference course. The other ${Object.keys(M.course_effects).length-1} courses each get a difficulty rating at every distance raced there, from athletes who ran both (see Course ratings below). Measured against kids' growth, every course, ${REF} included, reads about 1% slower each season, so each rating is taken against ${REF} in the same season and projections use the latest season's level. Heat counts too: athletes slow about ${pct(M.heat_per_10F)} for every 10&deg;F above 60&deg;F, measured from race-time weather at each meet. Heat is measured alongside how far into the season each race falls, so early-season fitness is not mistaken for heat.${tested.length?` Humidity, cold, wind and mud were also tested and made no measurable difference, so the model leaves them out.`:''}</p>
+<p>${REF}, home of the Flat SAC meet and raced at 1.5 mi every season since 2019, is the reference course. The other ${Object.keys(M.course_effects).length-1} courses each get a difficulty rating at every distance raced there, from athletes who ran both (see the Courses tab). Measured against kids' growth, every course, ${REF} included, reads about 1% slower each season, so each rating is taken against ${REF} in the same season and projections use the latest season's level. Heat counts too: athletes slow about ${pct(M.heat_per_10F)} for every 10&deg;F above 60&deg;F, measured from race-time weather at each meet. Heat is measured alongside how far into the season each race falls, so early-season fitness is not mistaken for heat.${tested.length?` Humidity, cold, wind and mud were also tested and made no measurable difference, so the model leaves them out.`:''}</p>
 <p>Behind the scenes the fit also uses results not shown here: the 2017 and 2018 cross country seasons and Hawks' track results from athletic.net. This extra history made projections about 6% more accurate for Hawks.</p>
 <p>Youth athletes improve fast: a typical ${pct(M.growth_per_year)} in pace per year, with a lot of variation between kids, so the likely range widens the longer an athlete goes without racing. Each projection is adjusted three ways that tested more accurate than one flat rate. Kids slower than their age and sex peers tend to improve faster, and faster kids more slowly, so part of that gap closes each year. After their first year of racing, kids improve a little more slowly, about 0.85% less per year; age itself makes no difference once speed and experience are counted. After a long break (more than six months without a race) the projection assumes less improvement than for kids who kept racing, about 2% less per year away.</p>
 <p>An athlete's expected time weights recent races more. A race loses half its weight every ${M.half_life} days, counted from their latest race. The estimate also pulls lightly toward the group average, which keeps one odd race from dominating.</p>
@@ -925,21 +936,37 @@ function renderCourses(){
  const list=[...C.values()].filter(o=>o.dists.length||o.next).sort((a,b)=>(b.next?1:0)-(a.next?1:0)||(a.next&&b.next?a.next.date.localeCompare(b.next.date):0)||b.last.localeCompare(a.last)||courseShort(a.course).localeCompare(courseShort(b.course)));
  const act=D.runners.filter(r=>r.active).map(r=>refLv(r)).filter(Boolean).map(p=>p.pred).sort((a,b)=>a-b);
  const med=act.length?Math.round(act[act.length>>1]/10)*10:600;
- const temp=o=>{const t=[...o.meets].map(k=>M.meet_temps[k]).filter(v=>v!=null);return t.length?Math.round(t.reduce((a,b)=>a+b)/t.length):null};
  const parse=v=>{const m=String(v).trim().match(/^(\d+):(\d{1,2}(?:\.\d*)?)$/);return m&&+m[2]<60?+m[1]*60+ +m[2]:null};
- $('#courseBody').innerHTML=`<h2 style="margin-top:48px">Course ratings</h2>
- <p class="sub">How fast each course runs compared with ${REF} at 1.5 mi, after allowing for distance. Enter a ${REF} time to see what it is worth on every course, in mild weather.</p>
- <div class="bar"><label for="refT" class="sub" style="margin:0">${REF} 1.5 mi time</label><input id="refT" class="tin" inputmode="decimal" autocomplete="off" value="${fmt(med)}" aria-describedby="refHelp"><span id="refHelp" class="sub" style="margin:0">Minutes and seconds, like 10:30</span></div>
- <div id="courseList"></div>`;
- const block=(o,T)=>{const n=o.meets.size,tp=temp(o);
-  const head=`<li class="grp"><h4>${esc(courseShort(o.course))}</h4><span class="lm">${o.sched?o.sched.map(m=>`${m.up?'Next: ':''}${esc(m.meet)}, ${md(m.date)}. `).join(''):o.next?`Next: ${esc(o.next.meet)}, ${md(o.next.date)}. `:''}${n?`${n} meet${n>1?'s':''} and ${n0(o.fin)} finishes in the data, last ${fdate(o.last)}${tp!=null?`. Typical start ${tp}&deg;F`:''}.`:o.dists.length?'Rated from results not shown here.':'First visit for the Hawks.'}</span></li>`;
-  if(!o.dists.length)return head+`<li><span class="ln">No rating yet</span><span class="lm">No results from this course, so projections use the typical effect for the distance and a wider range.</span></li>`;
-  return head+o.dists.sort((a,b)=>a.dist-b.dist).map(d=>{const p=Math.round((d.f-1)*1000)/10,eq=T*d.f*Math.pow(d.dist/1.5,R);
-   return `<li><span class="ln">${distLabel(d.dist)}</span><span class="lm">${o.course===ref&&Math.abs(d.dist-1.5)<.01?'Reference course':Math.abs(p)<1?'Within 1% of '+REF:`${Math.abs(p)}% ${p<0?'faster':'slower'} than ${REF}`}</span><span class="lt">${fmt(eq)}<small>equivalent</small></span></li>`}).join('')};
+ const loc=c=>{const i=c.indexOf(',');return i<0?'':c.slice(i+1).trim()};
+ // one row per course and distance; courses on the schedule with no rating yet get one row without a time
+ const rows=[];list.forEach(o=>{if(!o.dists.length){rows.push({o,d:null});return}o.dists.forEach(d=>rows.push({o,d}))});
+ const isRef=r=>r.d&&r.o.course===ref&&Math.abs(r.d.dist-1.5)<.01;
+ let V='sched';try{V=localStorage.getItem('dh_crs')||V}catch(e){}
+ $('#courseBody').innerHTML=`<p class="sub">How fast each course and distance runs against ${REF} at 1.5 mi, with heat and time of season taken out. Time here: what a runner with this ${REF} 1.5 mi time runs there in mild weather (60&deg;F or cooler).</p>
+ <div class="bar"><label for="refT" class="sub" style="margin:0">${REF} 1.5 mi</label><input id="refT" class="tin" inputmode="decimal" autocomplete="off" value="${fmt(med)}" aria-label="${REF} 1.5 mi time, minutes and seconds"></div>
+ <div class="bar" id="crsView"><button class="chip" data-v="sched">${Y} schedule</button><button class="chip" data-v="hawks">Hawks any year</button><button class="chip" data-v="all">All courses</button></div>
+ <div class="bar"><input id="crsQ" class="cq" type="search" placeholder="Find a course" aria-label="Find a course" autocomplete="off"></div>
+ <div class="scroll"><table id="crsTable"></table></div>
+ <p class="sub fnote" id="crsNote"></p>`;
  const draw=()=>{const T=parse($('#refT').value);$('#refT').setAttribute('aria-invalid',T==null);if(T==null)return;
-  const cur=list.filter(o=>o.sched).sort((a,b)=>a.sched[0].date.localeCompare(b.sched[0].date)),rest=list.filter(o=>!o.sched);
-  $('#courseList').innerHTML=`<h3 style="margin-top:24px">${Y} schedule</h3><ul class="list">${cur.map(o=>block(o,T)).join('')}</ul>`+(rest.length?`<details class="more"><summary>Other courses (${rest.length})</summary><ul class="list">${rest.map(o=>block(o,T)).join('')}</ul></details>`:'')};
- $('#refT').addEventListener('input',draw);draw();
+  document.querySelectorAll('#crsView .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===V));
+  const q=$('#crsQ').value.trim().toLowerCase();
+  const keep=r=>(V==='all'?true:V==='hawks'?r.o.meets.size>0||isRef(r):!!r.o.sched||isRef(r))&&(!q||r.o.course.toLowerCase().includes(q));
+  const vis=rows.filter(keep).sort((a,b)=>(a.d?0:1)-(b.d?0:1)||(a.d&&b.d?a.d.f-b.d.f:0)||courseShort(a.o.course).localeCompare(courseShort(b.o.course)));
+  const span=Math.max(5,...vis.filter(r=>r.d).map(r=>Math.abs(r.d.f-1)*100));
+  const when=o=>o.sched?o.sched.map(m=>`${m.up?'Next: ':''}${esc(m.meet)}, ${md(m.date)}`).join('. '):o.next?`Next: ${esc(o.next.meet)}, ${md(o.next.date)}`:'';
+  $('#crsTable').innerHTML=`<tr><th>Course</th><th>vs ${esc(REF)}</th><th class="n">Time here</th></tr>`+(vis.length?vis.map(r=>{const o=r.o,l=loc(o.course),w=when(o);
+   const sub=[l,isRef(r)?'Reference course':'',w].filter(Boolean).join(' &middot; ');
+   const name=`${esc(courseShort(o.course))}${r.d?` <b>${distLabel(r.d.dist)}</b>`:''}${sub?`<span class="rm">${sub}</span>`:''}`;
+   if(!r.d)return `<tr><td class="w">${name}</td><td class="cv"><small>No rating yet</small></td><td class="n">&ndash;</td></tr>`;
+   const p=Math.round((r.d.f-1)*1000)/10,wd=Math.min(50,Math.abs(p)/span*50),eq=T*r.d.f*Math.pow(r.d.dist/1.5,R);
+   const bar=`<span class="cbar" aria-hidden="true">${p?`<i class="${p<0?'f':'s'}" style="${p<0?`right:50%;width:${wd}%`:`left:50%;width:${wd}%`}"></i>`:''}</span>`;
+   return `<tr${isRef(r)?' class="hawk"':''}><td class="w">${name}</td><td class="cv">${bar}<small>${p?`${Math.abs(p).toFixed(1)}% ${p<0?'faster':'slower'}`:'same'}</small></td><td class="n"><b>${fmt(eq)}</b></td></tr>`}).join('')
+   :`<tr><td colspan="3" class="sub">No course matches.</td></tr>`);
+  $('#crsNote').textContent=`Fastest first. ${V==='sched'?`The ${Y} schedule: meets the Hawks ran as a club since August and upcoming meets. `:V==='hawks'?'Courses where Hawks have raced since 2019. ':'Every course rated, including ones only alumni or opponents ran. '}Ratings come from athletes who also raced elsewhere, so courses with few such athletes (the national courses, for example) are rough. Distances are scaled with the fitted exponent (${R.toFixed(3)}), so a 2 mi time converts too. A course with no rating yet uses the typical effect for its distance in projections.`};
+ $('#refT').addEventListener('input',draw);$('#crsQ').addEventListener('input',draw);
+ document.querySelectorAll('#crsView .chip').forEach(b=>b.onclick=()=>{V=b.dataset.v;try{localStorage.setItem('dh_crs',V)}catch(e){}draw()});
+ draw();
 }
 renderCourses();
 
