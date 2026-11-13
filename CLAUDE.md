@@ -61,6 +61,11 @@ templates, rebuilds and publishes the data, so a template change merged to main 
 - Mile pace (2026-10-16): clock time over the race distance ("5:38/mi"), under the time in the meet Results and Report tables
   and in each race-history line on athlete pages. Distance from x.dist, else read from the race name (raceDist also reads
   "2000 Meters"). Display only: the model's baseline stays the 1.5 mi Gibson Ranch equivalent.
+- Measured course lengths (2026-11-13, Kevin): MEASURED in the template maps a course to its length in meters from the course
+  map data, currently American River College 1730 (posted 1900 m, 1.2 mi, 2000 m). Paces there use it (meet result rows find
+  their course through the runners' races), and the runner page's course list and the Courses tab show "1,730 m (listed 2000 m)".
+  Display only: the pipeline keeps the posted labels, since the strict backtest predicts better with them (Hawks 32.8 s vs
+  33.5 s at 1730 m). The Courses tab's % and "Time here" stay at the posted distance.
 - Projections tab, one meet: athletes grouped by race in the order of the meet's races in D.meta.schedule (the pipeline lists a
   split meet's top fields first), then a "Marked as not going" section for upcoming entries with out=true (the pipeline's entry
   list; 2026-10-11). Those entries keep an expected time but no place, and the meet report's "Next up" count leaves them out.
