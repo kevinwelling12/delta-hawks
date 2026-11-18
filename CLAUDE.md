@@ -79,6 +79,7 @@ templates, rebuilds and publishes the data, so a template change merged to main 
   A gender with fewer than 5 Hawks going (D.sims[0].both) shows one 'Either race' table instead: each Hawk's place in both races,
   the Projections tab's race shaded; on phones Expected and Top 10 fold into the place cell so it fits without sideways scrolling.
 - Simulation tab note (2026-11-12): S.note shows after the entries sentence for posted entries too (CCC Nationals 2026), and the calibration paragraph names the league meets only when S.extra is set.
+- Simulation tab, no team score and age awards (2026-11-18, Kevin, CCC Nationals): S.no_team (config no_team) drops the team place line and the scoring sentence (Kevin: the Hawks have too few runners for any team competition there, so no team scores anywhere for that meet). S.age_awards (config age_awards, 25) adds each Hawk's place among runners of the same age on Dec 31 in the race (h.age, h.age_n, h.age_place [10,50,90]) and the chance of a top-25 age medal (h.award): columns 'Among same age' and 'Top 25' on desktop; on phones both fold into the Likely place cell. The calibration paragraph now says "Entrants' outside results" when S.extra is set (it named Chico's league meets).
 - Live tab: added 2026-10-21 (web PR #24), used at Flat SAC 2026, removed 2026-10-24 at Kevin's request; the code is in git history.
   Simulation tab: S.src names where entries came from (default athletic.net).
 - Course maps (2026-10-31, XC Projections tab): when D.course_maps has the selected meet (the pipeline's scripts/course_maps.py),
