@@ -66,7 +66,7 @@ h3{font:700 22px/1.15 var(--cond);letter-spacing:.01em;margin:40px 0 10px}
 .sub{color:var(--muted);font-size:14px;margin:0 0 14px;max-width:68ch}
 .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px}
 .bar .pair{display:inline-flex;gap:8px}   /* Girls and Boys stay on one line */
-.chip{min-height:40px;border:1px solid var(--ctl);background:var(--bg);padding:0 16px;border-radius:6px;font:600 16px/1 var(--cond);letter-spacing:.04em;text-transform:uppercase;cursor:pointer;color:var(--muted)}
+.chip{min-height:40px;border:1px solid var(--ctl);background:var(--bg);padding:0 16px;border-radius:6px;font:600 16px/1 var(--cond);letter-spacing:.04em;text-transform:uppercase;cursor:pointer;color:var(--muted)}a.chip{display:inline-flex;align-items:center;text-decoration:none;color:var(--ink);border-color:var(--ink)}
 .chip:hover{border-color:var(--ink);color:var(--ink)}
 .chip[aria-pressed="true"]{background:var(--sel-bg);border-color:var(--sel-bg);color:var(--sel-fg)}
 select{-webkit-appearance:none;appearance:none;min-height:42px;max-width:100%;border:1px solid var(--ctl);border-radius:6px;padding:0 38px 0 12px;font-size:16px;font-weight:600;background:var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23898B90' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center;cursor:pointer}
@@ -259,6 +259,7 @@ input.tin[aria-invalid="true"]{border-color:#B3261E;box-shadow:inset 0 0 0 1px #
  <button role="tab" aria-selected="false" data-tab="runner">Athletes</button>
  <button role="tab" aria-selected="false" data-tab="meets">Meets</button>
  <button role="tab" aria-selected="false" data-tab="courses">Courses</button>
+ <button role="tab" aria-selected="false" data-tab="live" hidden>Race day</button>
  <button role="tab" aria-selected="false" data-tab="sim" hidden>Simulation</button>
  <button role="tab" aria-selected="false" data-tab="records">Records</button>
  <button role="tab" aria-selected="false" data-tab="alumni">Alumni</button>
@@ -302,6 +303,7 @@ input.tin[aria-invalid="true"]{border-color:#B3261E;box-shadow:inset 0 0 0 1px #
  </div>
 </section>
 
+<section id="live" role="tabpanel"><div id="liveBody"></div></section>
 <section id="sim" role="tabpanel"><div id="simBody"></div></section>
 
 <section id="records" role="tabpanel">
@@ -897,6 +899,29 @@ function renderSim(){
  document.querySelectorAll('#simBody a[data-ath]').forEach(a=>a.onclick=e=>{e.preventDefault();openRunner(a.dataset.ath)});
 }
 try{renderSim()}catch(e){console.error(e)}
+// race day (2026-11-19, CCC Nationals): one card per Hawks race in start order, with the timer's live results link, start time,
+// starting box, and each Hawk's bib, expected time and simulated places. Data from the pipeline's sim config 'live' (S.live) and
+// bibs (h.bib); results stay on the timer's site, nothing is read from it here.
+function renderLive(){
+ const S=(D.sims||[])[0],L=S&&S.live;if(!L)return;document.querySelector('nav [data-tab="live"]').hidden=false;
+ const pct=v=>(v<1&&v>=.995?99:v>0&&v<.005?0:Math.round(v*100))+'%',AW=S.age_awards;
+ const mins=t=>{const m=/(\d+):(\d+)\s*(am|pm)/i.exec(t||'');if(!m)return 0;let h=+m[1]%12;if(/pm/i.test(m[3]))h+=12;return h*60+ +m[2]};
+ const shift=t=>{if(!L.tz_offset)return '';let x=mins(t)-L.tz_offset*60;x=(x+1440)%1440;const h=Math.floor(x/60),m=x%60;return `${h%12||12}:${String(m).padStart(2,'0')} ${h<12?'am':'pm'}`};
+ const races=S.races.filter(o=>o.hawks.length&&L.races[o.race]).sort((a,b)=>mins(L.races[a.race].start)-mins(L.races[b.race].start));
+ const card=o=>{const R=L.races[o.race],hw=[...o.hawks].sort((a,b)=>a.pred-b.pred),ag=AW&&hw.some(h=>h.age!=null);
+  return `<div class="rep-race"><div class="rh"><h4>${esc(o.race)}</h4><span>${esc(R.start)} ${esc(L.tz||'')}${L.tz_offset?` (${shift(R.start)} Pacific)`:''}${R.box?`, box ${R.box}${R.boxes?` of ${R.boxes}`:''}`:''}, ${o.field} runners</span></div>
+  <p style="margin:8px 0 10px"><a class="chip" href="${esc(R.url)}" target="_blank" rel="noopener">Live results &#8599;</a></p>
+  <div class="scroll"><table><tr><th>Hawk</th><th class="n lg">Bib</th><th class="n">Expected</th><th class="n">Likely place</th>${ag?`<th class="n lg">Among same age</th><th class="n lg">Top ${AW}</th>`:''}</tr>
+  ${hw.map(h=>`<tr><td class="w"><a href="#" data-ath="${esc(h.id)}">${esc(h.name)}</a>${h.bib?`<small class="sm">Bib <b>${h.bib}</b></small>`:''}</td><td class="n lg"><b>${h.bib??''}</b></td><td class="n tx">${fmt(h.pred)}<small>${fmt(h.lo)} to ${fmt(h.hi)}</small></td>
+  <td class="n rs"><b>${nth(h.place[1])}</b><small>${nth(h.place[0])} to ${nth(h.place[2])}</small>${ag&&h.age!=null?`<small class="sm"><b>${nth(h.age_place[1])}</b> of ${h.age_n} age ${h.age}</small><small class="sm">${pct(h.award)} top ${AW}</small>`:''}</td>
+  ${ag?(h.age!=null?`<td class="n lg rs"><b>${nth(h.age_place[1])}</b><small>of ${h.age_n} age ${h.age}</small></td><td class="n lg">${pct(h.award)}</td>`:'<td class="lg"></td><td class="lg"></td>'):''}</tr>`).join('')}</table></div></div>`};
+ $('#liveBody').innerHTML=`<h2>${esc(S.meet)}</h2>
+ <p class="sub">${fdate(S.date)} at ${esc(courseShort(S.course))}. Live results come from ${esc(L.src||'the timer')}: open a race's link to follow it. ${L.note?esc(L.note):''} Expected times and places are from the Simulation tab.</p>
+ <p style="margin:0 0 6px"><a class="chip" href="${esc(L.url)}" target="_blank" rel="noopener">All events &#8599;</a></p>
+ ${races.map(card).join('')}`;
+ document.querySelectorAll('#liveBody a[data-ath]').forEach(a=>a.onclick=e=>{e.preventDefault();openRunner(a.dataset.ath)});
+}
+try{renderLive()}catch(e){console.error(e)}
 
 
 // model
